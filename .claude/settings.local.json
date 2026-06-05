@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(curl -s -i \"https://api.anthropic.com/v1/design/h/D3e_eYeV9F8strJT2qRI0A\")",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' https://api.anthropic.com/v1/design/h/D3e_eYeV9F8strJT2qRI0A/__TRACKED_VAR__)",
+      "Bash(env)",
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "Bash(mkdir -p extracted)",
+      "Bash(tar -xzf webfetch-1780631419667-8m6byf.bin -C extracted)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/assets/yongtong-logo.jpeg)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1dmRxa25ibWVrZm13aWt1aXZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTU2NDksImV4cCI6MjA5NjIzMTY0OX0.Mdch3xPDUb5iL8LoPsVz50zWzDlz7P3e6tG-xIMQRWA\" \"https://auvdqknbmekfmwikuivr.supabase.co/rest/v1/products?select=count\" -H \"Prefer: count=exact\" -H \"Range: 0-0\")",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(12\\).toString\\('base64'\\).replace\\(/[+/=]/g,''\\).slice\\(0,16\\)\\)\")",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

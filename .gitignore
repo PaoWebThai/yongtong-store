@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+dist/
+.DS_Store
+
+# Env (มี secret — อย่า commit)
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Build artifacts
+.cache/
+.parcel-cache/
