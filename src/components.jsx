@@ -186,6 +186,93 @@ function AboutStore() {
     </section>
   );
 }
+/* ---------- Filter Sidebar (Shopee style) ---------- */
+function FilterSidebar({ activeCat, setActiveCat, priceMin, priceMax, setPriceMin, setPriceMax, onReset }) {
+  return (
+    <div className="filter-side">
+      <div className="filter-side-head">
+        {Icon.filter} ค้นหาแบบละเอียด
+      </div>
+
+      <div className="filter-block">
+        <div className="filter-block-title">ค้นหาตามหมวดหมู่</div>
+        <ul className="filter-cat-list">
+          {CATEGORIES.map((c) => (
+            <li
+              key={c.id}
+              className={`filter-cat-item ${activeCat === c.id ? "active" : ""}`}
+              onClick={() => setActiveCat(c.id)}
+            >
+              {activeCat === c.id && <span className="filter-cat-tick">{Icon.check}</span>}
+              {c.label}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="filter-block">
+        <div className="filter-block-title">ช่วงราคา</div>
+        <div className="filter-price">
+          <input
+            type="number"
+            className="filter-price-input"
+            placeholder="฿ ต่ำสุด"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
+          />
+          <span className="filter-price-dash">—</span>
+          <input
+            type="number"
+            className="filter-price-input"
+            placeholder="฿ สูงสุด"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <button className="filter-reset" onClick={onReset}>ล้างทั้งหมด</button>
+    </div>
+  );
+}
+
+/* ---------- Sort bar (Shopee style) ---------- */
+function SortBar({ sortBy, setSortBy, total }) {
+  const tabs = [
+    { id: "popular", label: "ยอดนิยม" },
+    { id: "new", label: "ล่าสุด" },
+    { id: "sold", label: "ขายดี" },
+  ];
+  const priceActive = sortBy === "lo" || sortBy === "hi";
+  return (
+    <div className="sortbar">
+      <span className="sortbar-label">เรียงโดย</span>
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          className={`sortbar-tab ${sortBy === t.id ? "active" : ""}`}
+          onClick={() => setSortBy(t.id)}
+        >
+          {t.label}
+        </button>
+      ))}
+      <button
+        className={`sortbar-tab sortbar-price ${priceActive ? "active" : ""}`}
+        onClick={() => setSortBy(sortBy === "lo" ? "hi" : "lo")}
+      >
+        ราคา
+        <span className="sortbar-price-arrows">
+          <i className={sortBy === "lo" ? "on" : ""}>▲</i>
+          <i className={sortBy === "hi" ? "on" : ""}>▼</i>
+        </span>
+      </button>
+      <span className="sortbar-count">
+        พบ <strong>{total}</strong> รายการ
+      </span>
+    </div>
+  );
+}
+
 function ProductCard({ product, onOpen, onAdd, onWish, isWished }) {
   return (
     <article className="product-card" onClick={() => onOpen(product)}>
@@ -226,9 +313,16 @@ function ProductCard({ product, onOpen, onAdd, onWish, isWished }) {
           )}
         </div>
         <div className="product-meta">
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-            ขายแล้ว <strong style={{ color: "var(--c-ink)", fontFeatureSettings: '"tnum"' }}>{product.sold}</strong> ชิ้น
+          <span className="product-rating">
+            <span className="product-stars">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <span key={i} className={i <= Math.round(product.rating) ? "on" : ""}>★</span>
+              ))}
+            </span>
           </span>
+          <span className="product-sold">ขายแล้ว {product.sold} ชิ้น</span>
+        </div>
+        <div className="product-loc-row">
           <span className="product-location">{Icon.pin} {product.location}</span>
         </div>
       </div>
@@ -554,4 +648,4 @@ function Footer({ onAdminClick }) {
   );
 }
 
-export { TopBar, Header, Hero, AboutStore, ProductCard, CartDrawer, ProductModal, Footer, fmt };
+export { TopBar, Header, Hero, AboutStore, FilterSidebar, SortBar, ProductCard, CartDrawer, ProductModal, Footer, fmt };

@@ -3,10 +3,9 @@
 import React from "react";
 import { Icon } from "./icons.jsx";
 import {
-  TopBar, Header, Hero, AboutStore, ProductCard,
+  TopBar, Header, Hero, AboutStore, FilterSidebar, SortBar, ProductCard,
   CartDrawer, ProductModal, Footer,
 } from "./components.jsx";
-import { CATEGORIES } from "./data.jsx";
 import { loadProducts } from "./products-store.jsx";
 import { getCurrentMember, refreshCurrentMember, logoutMember } from "./members.jsx";
 import { loadOrders, isAdmin } from "./orders.jsx";
@@ -17,28 +16,20 @@ import { AdminLogin, AdminDashboard } from "./admin.jsx";
 
 const { useState, useMemo, useEffect } = React;
 
-const SORTS = [
-  { id: "popular", label: "ยอดนิยม" },
-  { id: "new",     label: "มาใหม่ล่าสุด" },
-  { id: "sold",    label: "ขายดีที่สุด" },
-  { id: "lo",      label: "ราคา: ต่ำ → สูง" },
-  { id: "hi",      label: "ราคา: สูง → ต่ำ" },
-  { id: "rating",  label: "คะแนนรีวิวสูงสุด" },
-];
-
 function App() {
   const [activeCat, setActiveCat] = useState("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("popular");
-  const [showSort, setShowSort] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
 
   const [cart, setCart] = useState({});         // {productId: qty}
   const [wish, setWish] = useState(new Set());
   const [cartOpen, setCartOpen] = useState(false);
   const [openProduct, setOpenProduct] = useState(null);
   const [toasts, setToasts] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(8);
+  const [visibleCount, setVisibleCount] = useState(12);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [adminMode, setAdminMode] = useState(false);
   const [adminLoginOpen, setAdminLoginOpen] = useState(false);
@@ -123,6 +114,10 @@ function App() {
           p.tag.toLowerCase().includes(q)
       );
     }
+    const min = parseFloat(priceMin);
+    const max = parseFloat(priceMax);
+    if (!isNaN(min)) list = list.filter((p) => p.price >= min);
+    if (!isNaN(max)) list = list.filter((p) => p.price <= max);
     const sorters = {
       popular: (a, b) => b.sold * b.rating - a.sold * a.rating,
       new:     (a, b) => (b.badges.includes("new") ? 1 : 0) - (a.badges.includes("new") ? 1 : 0),
@@ -133,16 +128,9 @@ function App() {
     };
     list.sort(sorters[sortBy] || sorters.popular);
     return list;
-  }, [activeCat, search, sortBy, products]);
+  }, [activeCat, search, sortBy, products, priceMin, priceMax]);
 
-  useEffect(() => { setVisibleCount(8); }, [activeCat, search, sortBy]);
-
-  // Close sort menu on outside click
-  useEffect(() => {
-    if (!showSort) return;
-    const close = () => setShowSort(false);
-    setTimeout(() => window.addEventListener("click", close, { once: true }), 0);
-  }, [showSort]);
+  useEffect(() => { setVisibleCount(12); }, [activeCat, search, sortBy, priceMin, priceMax]);
 
   return (
     <>
@@ -171,84 +159,54 @@ function App() {
       <Hero following={following} setFollowing={setFollowing} />
       <AboutStore />
 
-      <main className="section" data-screen-label="01 Product Gallery">
-        <div className="section-head">
-          <div>
-            <h2 className="section-title">สินค้าทั้งหมด</h2>
-            <p className="section-sub">
-              พบ <strong>{filtered.length}</strong> รายการ
-              {search && <> · ค้นหา "<strong>{search}</strong>"</>}
-            </p>
-          </div>
-        </div>
+      <main className="shop-main" data-screen-label="01 Product Gallery">
+        <div className="shop-layout">
+          <aside className="shop-sidebar">
+            <FilterSidebar
+              activeCat={activeCat}
+              setActiveCat={setActiveCat}
+              priceMin={priceMin}
+              priceMax={priceMax}
+              setPriceMin={setPriceMin}
+              setPriceMax={setPriceMax}
+              onReset={() => { setActiveCat("all"); setPriceMin(""); setPriceMax(""); setSearch(""); }}
+            />
+          </aside>
 
-        <div className="filterbar">
-          <span className="filterbar-label">กรองตามหมวด</span>
-          <div className="chip-row">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                className={`chip ${activeCat === c.id ? "active" : ""}`}
-                onClick={() => setActiveCat(c.id)}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-          <div className="filterbar-spacer"></div>
-          <div
-            className="sort-select"
-            onClick={(e) => { e.stopPropagation(); setShowSort(!showSort); }}
-            style={{ position: "relative" }}
-          >
-            {Icon.filter}
-            <span>เรียง: {SORTS.find((s) => s.id === sortBy)?.label}</span>
-            {Icon.chevron}
-            {showSort && (
-              <div className="sort-menu" onClick={(e) => e.stopPropagation()}>
-                {SORTS.map((s) => (
-                  <div
-                    key={s.id}
-                    className={`sort-menu-item ${sortBy === s.id ? "active" : ""}`}
-                    onClick={() => { setSortBy(s.id); setShowSort(false); }}
-                  >
-                    {s.label}
+          <div className="shop-content">
+            <SortBar sortBy={sortBy} setSortBy={setSortBy} total={filtered.length} />
+
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 24px", color: "var(--c-muted)" }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
+                <div style={{ fontSize: 16, color: "var(--c-ink)", marginBottom: 6 }}>ไม่พบสินค้าที่ตรงกับเงื่อนไข</div>
+                <div style={{ fontSize: 13 }}>ลองเปลี่ยนหมวดหมู่หรือคำค้นหา</div>
+              </div>
+            ) : (
+              <>
+                <div className="product-grid">
+                  {filtered.slice(0, visibleCount).map((p) => (
+                    <ProductCard
+                      key={p.id}
+                      product={p}
+                      onOpen={setOpenProduct}
+                      onAdd={addToCart}
+                      onWish={toggleWish}
+                      isWished={wish.has(p.id)}
+                    />
+                  ))}
+                </div>
+                {visibleCount < filtered.length && (
+                  <div className="loadmore-wrap">
+                    <button className="loadmore" onClick={() => setVisibleCount((v) => v + 10)}>
+                      {Icon.refresh} โหลดเพิ่มเติม ({filtered.length - visibleCount} รายการ)
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>
-
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 24px", color: "var(--c-muted)" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-            <div style={{ fontSize: 16, color: "var(--c-ink)", marginBottom: 6 }}>ไม่พบสินค้าที่ตรงกับเงื่อนไข</div>
-            <div style={{ fontSize: 13 }}>ลองเปลี่ยนหมวดหมู่หรือคำค้นหา</div>
-          </div>
-        ) : (
-          <>
-            <div className="product-grid">
-              {filtered.slice(0, visibleCount).map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  onOpen={setOpenProduct}
-                  onAdd={addToCart}
-                  onWish={toggleWish}
-                  isWished={wish.has(p.id)}
-                />
-              ))}
-            </div>
-            {visibleCount < filtered.length && (
-              <div className="loadmore-wrap">
-                <button className="loadmore" onClick={() => setVisibleCount((v) => v + 8)}>
-                  {Icon.refresh} โหลดเพิ่มเติม ({filtered.length - visibleCount} รายการ)
-                </button>
-              </div>
-            )}
-          </>
-        )}
       </main>
 
       <Footer onAdminClick={() => setAdminLoginOpen(true)} />
