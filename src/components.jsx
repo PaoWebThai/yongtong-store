@@ -92,52 +92,62 @@ function Hero({ following, setFollowing }) {
   return (
     <section className="hero">
       <div className="hero-inner">
-        <div className="hero-card">
-          <div className="hero-emblem">
-            <img src="/assets/yongtong-logo.jpeg" alt="ยงค์ทอง สังฆภัณฑ์" />
-          </div>
-          <div className="hero-meta">
-            <div className="hero-status">{STORE.online ? "ออนไลน์อยู่" : "ออฟไลน์"} · ตอบเร็ว</div>
-            <h1 className="hero-name">{STORE.name}</h1>
-            <p className="hero-tag">{STORE.tagline}</p>
-            <div className="hero-actions">
-              <button className="btn btn-ghost">
-                {Icon.chat} แชทกับร้าน
-              </button>
+        <div className="storecard">
+          <div className="storecard-left">
+            <div className="storecard-emblem">
+              <img src="/assets/yongtong-logo.jpeg" alt={STORE.name} />
+            </div>
+            <div className="storecard-meta">
+              <h1 className="storecard-name">{STORE.name}</h1>
+              <div className="storecard-status">
+                {STORE.online ? "ออนไลน์อยู่" : "ออฟไลน์"} · ตอบกลับเร็ว
+              </div>
+              <div className="storecard-follows">
+                <span><strong>{fmt(STORE.followers)}</strong> ผู้ติดตาม</span>
+                <span className="storecard-dot">·</span>
+                <span><strong>{STORE.following}</strong> กำลังติดตาม</span>
+              </div>
+              <div className="storecard-actions">
+                <button
+                  className={`storecard-btn primary ${following ? "following" : ""}`}
+                  onClick={() => setFollowing(!following)}
+                >
+                  {following ? <>{Icon.check} กำลังติดตาม</> : <>{Icon.plus} ติดตาม</>}
+                </button>
+                <button className="storecard-btn ghost">{Icon.chat} แชท</button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">{Icon.store}</div>
-            <div className="stat-value">{STORE.productCount}<span className="unit">รายการ</span></div>
-            <div className="stat-label">สินค้าทั้งหมด</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">{Icon.users}</div>
-            <div className="stat-value">{fmt(STORE.followers)}</div>
-            <div className="stat-label">ลูกค้าประจำ</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">{Icon.chat}</div>
-            <div className="stat-value">{STORE.responseRate}<span className="unit">%</span></div>
-            <div className="stat-label">ตอบเร็วภายในไม่กี่ชั่วโมง</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">{Icon.clock}</div>
-            <div className="stat-value">{STORE.years}<span className="unit">ปี</span></div>
-            <div className="stat-label">ประสบการณ์งานสังฆภัณฑ์</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">{Icon.truck}</div>
-            <div className="stat-value">ทั่ว<span className="unit">ประเทศ</span></div>
-            <div className="stat-label">บริการจัดส่งทุกจังหวัด</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">{Icon.shield}</div>
-            <div className="stat-value">100<span className="unit">%</span></div>
-            <div className="stat-label">งานหัตถกรรมแท้ จากช่างฝีมือ</div>
+          <div className="storecard-stats">
+            <div className="storecard-stat">
+              <span className="storecard-stat-ic">{Icon.store}</span>
+              <div>
+                <div className="storecard-stat-val">{STORE.productCount}</div>
+                <div className="storecard-stat-lbl">สินค้า</div>
+              </div>
+            </div>
+            <div className="storecard-stat">
+              <span className="storecard-stat-ic">{Icon.star}</span>
+              <div>
+                <div className="storecard-stat-val">{STORE.rating}</div>
+                <div className="storecard-stat-lbl">คะแนน</div>
+              </div>
+            </div>
+            <div className="storecard-stat">
+              <span className="storecard-stat-ic">{Icon.chat}</span>
+              <div>
+                <div className="storecard-stat-val">{STORE.responseRate}%</div>
+                <div className="storecard-stat-lbl">อัตราการตอบกลับ</div>
+              </div>
+            </div>
+            <div className="storecard-stat">
+              <span className="storecard-stat-ic">{Icon.clock}</span>
+              <div>
+                <div className="storecard-stat-val sm">ภายในไม่กี่ชั่วโมง</div>
+                <div className="storecard-stat-lbl">เวลาในการตอบกลับ</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -587,7 +597,7 @@ function Footer({ onAdminClick }) {
               <div className="brand-logo" style={{ width: 44, height: 44 }}>
                 <img src="/assets/yongtong-logo.jpeg" alt="ยงค์ทอง" />
               </div>
-              <div style={{ color: "#FFE9C9", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>
+              <div style={{ color: "var(--c-ink)", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>
                 ยงค์ทอง สังฆภัณฑ์
               </div>
             </div>

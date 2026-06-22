@@ -171,8 +171,7 @@
 
 /* ===== About store section ===== */
 .about {
-  background:
-    linear-gradient(180deg, #F5EFE2 0%, #FBF7EE 100%);
+  background: var(--c-bg);
   border-top: 1px solid var(--c-line);
   border-bottom: 1px solid var(--c-line);
 }
@@ -247,11 +246,11 @@
   width: 42px; height: 42px;
   border-radius: 12px;
   display: grid; place-items: center;
-  background: rgba(255, 235, 200, 0.1);
-  border: 1px solid rgba(255, 235, 200, 0.2);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-line);
   transition: all 0.15s;
 }
-.footer-social svg { width: 20px; height: 20px; color: #FFE9C9; }
+.footer-social svg { width: 20px; height: 20px; color: var(--c-ink-2); }
 .footer-social:hover { transform: translateY(-2px); }
 .footer-social.fb:hover { background: #1877F2; border-color: #1877F2; }
 .footer-social.line:hover { background: #06C755; border-color: #06C755; }
@@ -273,13 +272,13 @@
 .fc-icon {
   width: 32px; height: 32px;
   border-radius: 8px;
-  background: rgba(255, 235, 200, 0.1);
+  background: var(--c-surface-2);
   display: grid; place-items: center;
   flex-shrink: 0;
 }
-.fc-icon svg { width: 16px; height: 16px; color: #F2A04D; }
-.footer-contact a { color: rgba(255, 235, 200, 0.85); transition: color 0.15s; line-height: 1.7; }
-.footer-contact a:hover { color: #FFE9C9; }
+.fc-icon svg { width: 16px; height: 16px; color: var(--c-primary); }
+.footer-contact a { color: var(--c-ink-2); transition: color 0.15s; line-height: 1.7; }
+.footer-contact a:hover { color: var(--c-primary); }
 
 .footer-links-list {
   list-style: none; padding: 0; margin: 0;
@@ -288,31 +287,31 @@
 .footer-links-list a {
   display: flex; align-items: center; gap: 10px;
   font-size: 15px;
-  color: rgba(255, 235, 200, 0.85);
+  color: var(--c-ink-2);
   transition: color 0.15s;
 }
 .footer-links-list a svg { width: 17px; height: 17px; }
-.footer-links-list a:hover { color: #FFE9C9; }
+.footer-links-list a:hover { color: var(--c-primary); }
 
 .footer-address {
   font-size: 14px;
   line-height: 1.7;
-  color: rgba(255, 235, 200, 0.85);
+  color: var(--c-ink-2);
   margin-bottom: 14px;
 }
 .footer-map-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 10px 16px;
   border-radius: 10px;
-  background: rgba(242, 160, 77, 0.15);
-  border: 1px solid rgba(242, 160, 77, 0.3);
-  color: #F2A04D;
+  background: rgba(255, 87, 34, 0.10);
+  border: 1px solid rgba(255, 87, 34, 0.25);
+  color: var(--c-primary);
   font-size: 14px;
   font-weight: 600;
   transition: all 0.15s;
 }
 .footer-map-btn svg { width: 16px; height: 16px; }
-.footer-map-btn:hover { background: rgba(242, 160, 77, 0.25); transform: translateY(-1px); }
+.footer-map-btn:hover { background: rgba(255, 87, 34, 0.18); transform: translateY(-1px); }
 
 /* ===== Responsive ===== */
 @media (max-width: 860px) {

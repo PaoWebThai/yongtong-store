@@ -157,7 +157,6 @@ function App() {
         />
       )}
       <Hero following={following} setFollowing={setFollowing} />
-      <AboutStore />
 
       <main className="shop-main" data-screen-label="01 Product Gallery">
         <div className="shop-layout">
@@ -208,6 +207,8 @@ function App() {
           </div>
         </div>
       </main>
+
+      <AboutStore />
 
       <Footer onAdminClick={() => setAdminLoginOpen(true)} />
 

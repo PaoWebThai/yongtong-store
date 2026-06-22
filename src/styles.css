@@ -1,22 +1,22 @@
 /* ===== ยงค์ทอง สังฆภัณฑ์ — design tokens (Shopee style) ===== */
 :root {
-  --c-bg:        #F5F5F5;          /* shopee light grey */
+  --c-bg:        #FAFAFA;          /* near-white light grey */
   --c-surface:   #FFFFFF;
-  --c-surface-2: #F6F6F6;
+  --c-surface-2: #F4F4F4;
   --c-ink:       #222222;          /* near-black text */
   --c-ink-2:     #555555;
   --c-muted:     #888888;
-  --c-line:      #EDEDED;
+  --c-line:      #EAEAEA;
 
-  --c-primary:    #EE4D2D;         /* shopee orange */
-  --c-primary-2:  #F05D40;         /* lighter orange */
-  --c-primary-3:  #FF7337;
-  --c-deep:       #D4380D;
-  --c-accent:     #FF7337;         /* bright orange accent */
+  --c-primary:    #FF5722;         /* vivid bright orange */
+  --c-primary-2:  #FF7043;         /* lighter orange */
+  --c-primary-3:  #FF8A50;
+  --c-deep:       #E64A19;
+  --c-accent:     #FF8A50;         /* bright orange accent */
   --c-success:    #26AA99;         /* shopee teal */
 
-  --c-price:      #EE4D2D;         /* product price orange */
-  --c-discount:   #EE4D2D;
+  --c-price:      #FF5722;         /* product price orange */
+  --c-discount:   #FF5722;
   --c-star:       #FFCE3D;         /* shopee gold star */
 
   --radius-sm: 6px;
@@ -29,7 +29,7 @@
   --shadow-lg: 0 24px 48px -18px rgba(80, 40, 15, 0.30);
   --shadow-glow: 0 12px 36px -10px rgba(217, 122, 44, 0.45);
 
-  --font-th: "IBM Plex Sans Thai", "Sarabun", system-ui, -apple-system, sans-serif;
+  --font-th: "Noto Serif Thai", "IBM Plex Sans Thai", serif;
   --font-display: "Noto Serif Thai", "IBM Plex Sans Thai", serif;
 
   --maxw: 1280px;
@@ -54,7 +54,7 @@ img { display: block; max-width: 100%; }
 
 /* ----------------------------- TopBar (utility) ----------------------------- */
 .topbar {
-  background: linear-gradient(90deg, #F53D2D 0%, #F63 100%);
+  background: linear-gradient(90deg, #FF5722 0%, #FF7A33 100%);
   color: #FFFFFF;
   font-size: 14px;
 }
@@ -78,7 +78,7 @@ img { display: block; max-width: 100%; }
   position: sticky;
   top: 0;
   z-index: 50;
-  background: linear-gradient(180deg, #F53D2D 0%, #EE4D2D 100%);
+  background: linear-gradient(180deg, #FF6633 0%, #FF5722 100%);
   color: #FFFFFF;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 }
@@ -138,8 +138,8 @@ img { display: block; max-width: 100%; }
   position: relative;
   display: flex;
   background: white;
-  border-radius: 999px;
-  padding: 4px 4px 4px 22px;
+  border-radius: 4px;
+  padding: 3px 3px 3px 16px;
   align-items: center;
   border: 2px solid rgba(255, 235, 200, 0.7);
   transition: border-color 0.2s, transform 0.2s;
@@ -167,14 +167,14 @@ img { display: block; max-width: 100%; }
 .search-btn {
   background: var(--c-primary);
   color: white;
-  border-radius: 999px;
+  border-radius: 2px;
   padding: 12px 26px;
   font-size: 16px;
   font-weight: 600;
   display: flex; align-items: center; gap: 8px;
-  transition: background 0.15s, transform 0.15s;
+  transition: background 0.15s;
 }
-.search-btn:hover { background: var(--c-deep); transform: scale(1.02); }
+.search-btn:hover { background: var(--c-deep); }
 
 .search-tags {
   position: absolute;
@@ -266,95 +266,127 @@ img { display: block; max-width: 100%; }
 /* ----------------------------- Hero / store info ----------------------------- */
 .hero {
   position: relative;
-  background:
-    radial-gradient(ellipse at top right, rgba(217, 122, 44, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse at bottom left, rgba(184, 87, 40, 0.12) 0%, transparent 60%),
-    linear-gradient(180deg, #FBF7EE 0%, #F5EFE2 100%);
+  background: var(--c-bg);
   overflow: hidden;
-}
-.hero::before {
-  content: "";
-  position: absolute; inset: 0;
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(120, 60, 20, 0.06) 1px, transparent 0);
-  background-size: 24px 24px;
-  pointer-events: none;
 }
 .hero-inner {
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 36px 24px 32px;
+  padding: 24px;
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  align-items: center;
 }
-.hero-card {
+
+/* Shopee-style store card */
+.storecard {
   background: white;
-  border-radius: var(--radius-xl);
-  padding: 28px;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 22px;
-  align-items: center;
   border: 1px solid var(--c-line);
-  box-shadow: var(--shadow);
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 28px;
+  align-items: center;
+  padding: 22px 26px;
 }
-.hero-emblem {
-  width: 132px; height: 132px;
+.storecard-left {
+  display: flex; align-items: center; gap: 18px;
+  min-width: 0;
+}
+.storecard-emblem {
+  width: 92px; height: 92px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow:
-    0 12px 30px -8px rgba(120, 50, 20, 0.5),
-    0 0 0 4px rgba(255, 235, 200, 0.6),
-    0 0 0 6px rgba(184, 87, 40, 0.2);
   flex-shrink: 0;
-  background: #FFE9C9;
+  background: var(--c-surface-2);
+  border: 2px solid var(--c-line);
 }
-.hero-emblem img {
+.storecard-emblem img {
   width: 100%; height: 100%;
   object-fit: cover;
   display: block;
 }
-
-.hero-meta { min-width: 0; }
-.hero-status {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 14px;
-  color: var(--c-success);
-  margin-bottom: 4px;
-  font-weight: 500;
+.storecard-meta { min-width: 0; }
+.storecard-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-ink);
+  margin: 0 0 4px;
+  line-height: 1.2;
 }
-.hero-status::before {
+.storecard-status {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px;
+  color: var(--c-success);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.storecard-status::before {
   content: "";
-  width: 8px; height: 8px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   background: var(--c-success);
-  box-shadow: 0 0 0 4px rgba(79, 122, 46, 0.18);
+  box-shadow: 0 0 0 3px rgba(38, 170, 153, 0.18);
   animation: pulse 2s infinite;
 }
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(79, 122, 46, 0.18); }
-  50%      { box-shadow: 0 0 0 8px rgba(79, 122, 46, 0); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(38, 170, 153, 0.18); }
+  50%      { box-shadow: 0 0 0 7px rgba(38, 170, 153, 0); }
 }
-.hero-name {
-  font-family: var(--font-display);
-  font-size: 32px;
+.storecard-follows {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px;
+  color: var(--c-muted);
+  margin-bottom: 14px;
+}
+.storecard-follows strong { color: var(--c-ink); font-weight: 700; }
+.storecard-dot { color: var(--c-line); }
+.storecard-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.storecard-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 22px;
+  border-radius: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.storecard-btn svg { width: 15px; height: 15px; }
+.storecard-btn.primary { background: var(--c-primary); color: white; }
+.storecard-btn.primary:hover { background: var(--c-deep); }
+.storecard-btn.primary.following { background: white; color: var(--c-primary); border-color: var(--c-primary); }
+.storecard-btn.ghost { background: white; color: var(--c-ink-2); border-color: var(--c-line); }
+.storecard-btn.ghost:hover { color: var(--c-primary); border-color: var(--c-primary); }
+
+.storecard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 36px;
+  padding-left: 28px;
+  border-left: 1px solid var(--c-line);
+}
+.storecard-stat {
+  display: flex; align-items: center; gap: 10px;
+}
+.storecard-stat-ic {
+  display: grid; place-items: center;
+  color: var(--c-primary);
+  flex-shrink: 0;
+}
+.storecard-stat-ic svg { width: 22px; height: 22px; }
+.storecard-stat-val {
+  font-size: 20px;
   font-weight: 700;
-  color: var(--c-ink);
-  margin: 4px 0 10px;
-  line-height: 1.15;
+  color: var(--c-primary);
+  line-height: 1.1;
+  font-feature-settings: "tnum";
 }
-.hero-tag {
-  font-size: 17px;
-  color: var(--c-ink-2);
-  margin-bottom: 22px;
-  line-height: 1.5;
+.storecard-stat-val.sm { font-size: 14px; }
+.storecard-stat-lbl {
+  font-size: 13px;
+  color: var(--c-muted);
 }
-.hero-actions {
-  display: flex; gap: 10px; flex-wrap: wrap;
-}
+
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 13px 24px;
@@ -382,50 +414,6 @@ img { display: block; max-width: 100%; }
 }
 .btn-ghost:hover { border-color: var(--c-primary); color: var(--c-primary); }
 .btn svg { width: 16px; height: 16px; }
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-.stat-card {
-  background: white;
-  border-radius: var(--radius);
-  padding: 18px 16px;
-  border: 1px solid var(--c-line);
-  display: flex; flex-direction: column;
-  gap: 6px;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-.stat-card::before {
-  content: "";
-  position: absolute; top: 0; right: 0;
-  width: 60px; height: 60px;
-  background: radial-gradient(circle at top right, rgba(217, 122, 44, 0.12), transparent 70%);
-}
-.stat-icon {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  background: var(--c-surface-2);
-  color: var(--c-primary);
-  display: grid; place-items: center;
-}
-.stat-icon svg { width: 18px; height: 18px; }
-.stat-value {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--c-ink);
-  letter-spacing: -0.5px;
-  font-feature-settings: "tnum";
-}
-.stat-value .unit { font-size: 15px; color: var(--c-muted); font-weight: 500; margin-left: 2px; }
-.stat-label {
-  font-size: 14px;
-  color: var(--c-muted);
-}
 
 /* ----------------------------- Section header ----------------------------- */
 .section {
@@ -1217,9 +1205,10 @@ img { display: block; max-width: 100%; }
 /* ----------------------------- Footer ----------------------------- */
 .footer {
   margin-top: 48px;
-  background: linear-gradient(180deg, #2A1F14 0%, #1A130A 100%);
-  color: rgba(255, 235, 200, 0.7);
+  background: var(--c-bg);
+  color: var(--c-ink-2);
   padding: 36px 0 24px;
+  border-top: 1px solid var(--c-line);
 }
 .footer-inner {
   max-width: var(--maxw);
@@ -1231,20 +1220,22 @@ img { display: block; max-width: 100%; }
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 36px;
   padding-bottom: 28px;
-  border-bottom: 1px solid rgba(255, 235, 200, 0.1);
+  border-bottom: 1px solid var(--c-line);
 }
 .footer h4 {
-  color: #FFE9C9;
+  color: var(--c-ink);
   margin: 0 0 12px;
   font-size: 16px;
   font-family: var(--font-display);
+  font-weight: 700;
 }
 .footer ul { list-style: none; padding: 0; margin: 0; }
 .footer ul li { padding: 5px 0; font-size: 15px; }
-.footer ul li:hover { color: #FFE9C9; cursor: pointer; }
+.footer ul li:hover { color: var(--c-primary); cursor: pointer; }
 .footer-copy {
   padding-top: 18px;
   font-size: 14px;
+  color: var(--c-muted);
   display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
 }
 
@@ -1258,9 +1249,12 @@ img { display: block; max-width: 100%; }
   .brand-name { font-size: 18px; }
   .search-tags { display: none; }
   .search-cat { display: none; }
-  .hero-inner { grid-template-columns: 1fr; gap: 20px; }
-  .hero-card { grid-template-columns: 1fr; text-align: center; }
-  .hero-emblem { margin: 0 auto; }
+  .storecard { grid-template-columns: 1fr; gap: 18px; }
+  .storecard-stats {
+    border-left: none; padding-left: 0;
+    border-top: 1px solid var(--c-line); padding-top: 18px;
+    grid-template-columns: repeat(2, 1fr); gap: 18px;
+  }
   .shop-layout { grid-template-columns: 1fr; }
   .shop-sidebar { position: static; }
   .filter-side { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 14px; }
@@ -1283,9 +1277,10 @@ img { display: block; max-width: 100%; }
   .shop-main { padding: 14px 12px 22px; }
   .section { padding: 22px 16px; }
   .section-title { font-size: 20px; }
-  .hero-inner { padding: 22px 16px; }
-  .hero-name { font-size: 22px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-inner { padding: 14px 12px; }
+  .storecard { padding: 16px; }
+  .storecard-name { font-size: 18px; }
+  .storecard-emblem { width: 68px; height: 68px; }
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .product-info { padding: 8px 8px 10px; }
   .product-price { font-size: 16px; }

@@ -149,6 +149,13 @@ const Icon = {
       <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" />
     </svg>
   ),
+  bag: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.5 7h15l-.8 12.2a1.8 1.8 0 0 1-1.8 1.7H7.1a1.8 1.8 0 0 1-1.8-1.7L4.5 7Z" />
+      <path d="M8.5 7V6a3.5 3.5 0 0 1 7 0v1" />
+      <path d="M13.9 11.4c-.45-.4-1.05-.6-1.8-.6-1 0-1.75.5-1.75 1.3 0 .8.75 1.1 1.65 1.4 1 .3 1.85.6 1.85 1.5s-.8 1.4-1.85 1.4c-.75 0-1.45-.3-1.9-.75" />
+    </svg>
+  ),
   coin: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9" /><path d="M14.8 9A3 3 0 0 0 12 7c-1.7 0-3 1-3 2.3 0 1.5 1.5 2 3 2.3s3 .8 3 2.4-1.3 2.5-3 2.5a3 3 0 0 1-2.8-2M12 5v2M12 17v2" />
