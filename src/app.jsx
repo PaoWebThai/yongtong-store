@@ -3,7 +3,7 @@
 import React from "react";
 import { Icon } from "./icons.jsx";
 import {
-  TopBar, Header, Hero, AboutStore, FilterSidebar, SortBar, ProductCard,
+  TopBar, Header, HeroBanner, PromoCarousel, AboutStore, FilterSidebar, SortBar, ProductCard,
   CartDrawer, ProductModal, Footer,
 } from "./components.jsx";
 import { loadProducts } from "./products-store.jsx";
@@ -20,7 +20,6 @@ function App() {
   const [activeCat, setActiveCat] = useState("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("popular");
-  const [following, setFollowing] = useState(false);
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
 
@@ -135,6 +134,7 @@ function App() {
   return (
     <>
       <TopBar onTrackClick={() => setTrackOpen(true)} />
+      <HeroBanner />
       <Header
         cartCount={cartCount}
         wishCount={wish.size}
@@ -156,9 +156,9 @@ function App() {
           onLogout={() => { logoutMember(); setMember(null); setMemberMenuOpen(false); pushToast("ออกจากระบบแล้ว"); }}
         />
       )}
-      <Hero following={following} setFollowing={setFollowing} />
+      <PromoCarousel />
 
-      <main className="shop-main" data-screen-label="01 Product Gallery">
+      <main className="shop-main" id="products" data-screen-label="01 Product Gallery">
         <div className="shop-layout">
           <aside className="shop-sidebar">
             <FilterSidebar

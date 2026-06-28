@@ -14,13 +14,9 @@ function TopBar({ onTrackClick }) {
     <div className="topbar">
       <div className="topbar-inner" style={{ justifyContent: "flex-end" }}>
         <div className="topbar-links">
-          <a style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {Icon.globe} ภาษาไทย
+          <a onClick={onTrackClick} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            {Icon.truck} ติดตามสินค้า
           </a>
-          <span className="topbar-divider">|</span>
-          <a>ช่วยเหลือ</a>
-          <span className="topbar-divider">|</span>
-          <a onClick={onTrackClick} style={{ cursor: "pointer" }}>ติดตามคำสั่งซื้อ</a>
         </div>
       </div>
     </div>
@@ -32,14 +28,8 @@ function Header({ cartCount, wishCount, search, setSearch, activeCat, setActiveC
   return (
     <header className="header">
       <div className="header-inner">
-        <a className="brand-mark">
-          <div className="brand-logo">
-            <img src="/assets/yongtong-logo.jpeg" alt="ยงค์ทอง สังฆภัณฑ์" />
-          </div>
-          <div className="brand-text">
-            <div className="brand-name">ยงค์ทอง</div>
-            <div className="brand-sub">สังฆภัณฑ์ · อ.วานรนิวาส จ.สกลนคร</div>
-          </div>
+        <a className="header-logo" href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+          <img src="/assets/yongtong-logo.jpeg" alt="ยงค์ทอง สังฆภัณฑ์" />
         </a>
 
         <div className="search-shell">
@@ -87,69 +77,89 @@ function Header({ cartCount, wishCount, search, setSearch, activeCat, setActiveC
   );
 }
 
-/* ---------- Hero / store info ---------- */
-function Hero({ following, setFollowing }) {
+/* ---------- Hero banner (top masthead) ---------- */
+function HeroBanner() {
   return (
-    <section className="hero">
-      <div className="hero-inner">
-        <div className="storecard">
-          <div className="storecard-left">
-            <div className="storecard-emblem">
-              <img src="/assets/yongtong-logo.jpeg" alt={STORE.name} />
-            </div>
-            <div className="storecard-meta">
-              <h1 className="storecard-name">{STORE.name}</h1>
-              <div className="storecard-status">
-                {STORE.online ? "ออนไลน์อยู่" : "ออฟไลน์"} · ตอบกลับเร็ว
-              </div>
-              <div className="storecard-follows">
-                <span><strong>{fmt(STORE.followers)}</strong> ผู้ติดตาม</span>
-                <span className="storecard-dot">·</span>
-                <span><strong>{STORE.following}</strong> กำลังติดตาม</span>
-              </div>
-              <div className="storecard-actions">
-                <button
-                  className={`storecard-btn primary ${following ? "following" : ""}`}
-                  onClick={() => setFollowing(!following)}
-                >
-                  {following ? <>{Icon.check} กำลังติดตาม</> : <>{Icon.plus} ติดตาม</>}
-                </button>
-                <button className="storecard-btn ghost">{Icon.chat} แชท</button>
-              </div>
-            </div>
-          </div>
-
-          <div className="storecard-stats">
-            <div className="storecard-stat">
-              <span className="storecard-stat-ic">{Icon.store}</span>
-              <div>
-                <div className="storecard-stat-val">{STORE.productCount}</div>
-                <div className="storecard-stat-lbl">สินค้า</div>
-              </div>
-            </div>
-            <div className="storecard-stat">
-              <span className="storecard-stat-ic">{Icon.star}</span>
-              <div>
-                <div className="storecard-stat-val">{STORE.rating}</div>
-                <div className="storecard-stat-lbl">คะแนน</div>
-              </div>
-            </div>
-            <div className="storecard-stat">
-              <span className="storecard-stat-ic">{Icon.chat}</span>
-              <div>
-                <div className="storecard-stat-val">{STORE.responseRate}%</div>
-                <div className="storecard-stat-lbl">อัตราการตอบกลับ</div>
-              </div>
-            </div>
-            <div className="storecard-stat">
-              <span className="storecard-stat-ic">{Icon.clock}</span>
-              <div>
-                <div className="storecard-stat-val sm">ภายในไม่กี่ชั่วโมง</div>
-                <div className="storecard-stat-lbl">เวลาในการตอบกลับ</div>
-              </div>
-            </div>
-          </div>
+    <section className="hero-banner-section">
+      <div className="hero-banner">
+        <div className="hero-banner-deco" aria-hidden="true">
+          <span className="hb-orb hb-orb-1"></span>
+          <span className="hb-orb hb-orb-2"></span>
+          <span className="hb-ring"></span>
         </div>
+        <div className="hero-banner-emblem">
+          <img src="/assets/yongtong-logo.jpeg" alt={STORE.name} />
+        </div>
+        <div className="hero-banner-text">
+          <div className="hero-banner-eyebrow">ยินดีต้อนรับสู่ร้าน</div>
+          <h1 className="hero-banner-title">{STORE.name}</h1>
+          <p className="hero-banner-tagline">{STORE.tagline}</p>
+          <a href="#products" className="hero-banner-cta">เลือกชมสินค้าทั้งหมด {Icon.arrow}</a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Promo carousel (auto-scrolling images) ---------- */
+const PROMO_SLIDES = [
+  { src: "/assets/promo-1.jpg", alt: "บาตรลูกจีน เคลือบเทปลอน", title: "บาตรลูกจีน เคลือบเทปลอน", sub: "เสริมขอบ งานคุณภาพ" },
+  { src: "/assets/promo-2.jpg", alt: "บาตรเคลือบเทปลอน 3 แบบ 3 ทรง", title: "บาตรเคลือบเทปลอน", sub: "3 แบบ 3 ทรง ให้เลือก" },
+];
+
+function PromoCarousel() {
+  const [idx, setIdx] = React.useState(0);
+  const [failed, setFailed] = React.useState({});
+  const count = PROMO_SLIDES.length;
+
+  React.useEffect(() => {
+    if (count <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % count), 4000);
+    return () => clearInterval(t);
+  }, [count]);
+
+  return (
+    <section className="promo-carousel-section">
+      <div className="promo-carousel">
+        <div className="promo-track" style={{ transform: `translateX(-${idx * 100}%)` }}>
+          {PROMO_SLIDES.map((s, i) => (
+            <div className="promo-slide" key={i}>
+              {failed[i] ? (
+                <div className="promo-fallback">
+                  <div className="promo-fallback-emblem">
+                    <img src="/assets/yongtong-logo.jpeg" alt={STORE.name} />
+                  </div>
+                  <div className="promo-fallback-title">{s.title}</div>
+                  <div className="promo-fallback-sub">{s.sub}</div>
+                </div>
+              ) : (
+                <img
+                  className="promo-img"
+                  src={s.src}
+                  alt={s.alt}
+                  onError={() => setFailed((f) => ({ ...f, [i]: true }))}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {count > 1 && (
+          <>
+            <button className="promo-arrow prev" onClick={() => setIdx((i) => (i - 1 + count) % count)} aria-label="ก่อนหน้า">‹</button>
+            <button className="promo-arrow next" onClick={() => setIdx((i) => (i + 1) % count)} aria-label="ถัดไป">›</button>
+            <div className="promo-dots">
+              {PROMO_SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  className={`promo-dot ${i === idx ? "active" : ""}`}
+                  onClick={() => setIdx(i)}
+                  aria-label={`สไลด์ ${i + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
@@ -323,17 +333,8 @@ function ProductCard({ product, onOpen, onAdd, onWish, isWished }) {
           )}
         </div>
         <div className="product-meta">
-          <span className="product-rating">
-            <span className="product-stars">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <span key={i} className={i <= Math.round(product.rating) ? "on" : ""}>★</span>
-              ))}
-            </span>
-          </span>
-          <span className="product-sold">ขายแล้ว {product.sold} ชิ้น</span>
-        </div>
-        <div className="product-loc-row">
           <span className="product-location">{Icon.pin} {product.location}</span>
+          <span className="product-sold">ขายแล้ว {product.sold} ชิ้น</span>
         </div>
       </div>
     </article>
@@ -658,4 +659,4 @@ function Footer({ onAdminClick }) {
   );
 }
 
-export { TopBar, Header, Hero, AboutStore, FilterSidebar, SortBar, ProductCard, CartDrawer, ProductModal, Footer, fmt };
+export { TopBar, Header, HeroBanner, PromoCarousel, AboutStore, FilterSidebar, SortBar, ProductCard, CartDrawer, ProductModal, Footer, fmt };

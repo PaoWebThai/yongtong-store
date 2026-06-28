@@ -3,6 +3,12 @@
 import React from "react";
 import { Icon, ProductPlaceholder } from "./icons.jsx";
 import { getOrdersByPhone, getOrderById } from "./orders.jsx";
+
+// ตรวจว่า query เป็นเบอร์โทร (ตัวเลขล้วน 9-10 หลัก อนุญาต - และเว้นวรรค)
+function looksLikePhone(q) {
+  const digits = (q || "").replace(/[-\s]/g, "");
+  return /^[0-9]{9,10}$/.test(digits);
+}
 import { fmtDateTH } from "./admin.jsx";
 import { fmtBaht } from "./checkout.jsx";
 
@@ -20,7 +26,8 @@ const TRACK_FLOW = ["pending", "confirmed", "shipping", "delivered"];
 function OrderTracking({ member, onClose }) {
   const [query, setQuery] = useStateOT("");
   const [searched, setSearched] = useStateOT(false);
-  const [result, setResult] = useStateOT(null);
+  const [results, setResults] = useStateOT([]);
+  const [searchedByPhone, setSearchedByPhone] = useStateOT(false);
   const [myOrders, setMyOrders] = useStateOT([]);
   const [searching, setSearching] = useStateOT(false);
 
@@ -37,11 +44,19 @@ function OrderTracking({ member, onClose }) {
 
   async function doSearch(e) {
     e && e.preventDefault();
+    if (!query.trim()) return;
     setSearched(true);
     setSearching(true);
+    const byPhone = looksLikePhone(query);
+    setSearchedByPhone(byPhone);
     try {
-      const o = await getOrderById(query);
-      setResult(o);
+      if (byPhone) {
+        const list = await getOrdersByPhone(query);
+        setResults(list);
+      } else {
+        const o = await getOrderById(query);
+        setResults(o ? [o] : []);
+      }
     } finally {
       setSearching(false);
     }
@@ -56,13 +71,13 @@ function OrderTracking({ member, onClose }) {
           <div className="track-head-icon">{Icon.truck}</div>
           <div>
             <h2 className="track-title">ติดตามคำสั่งซื้อ</h2>
-            <p className="track-sub">กรอกเลขที่คำสั่งซื้อเพื่อตรวจสอบสถานะการจัดส่ง</p>
+            <p className="track-sub">กรอกเลขที่คำสั่งซื้อ หรือเบอร์โทรศัพท์ เพื่อตรวจสอบสถานะการจัดส่ง</p>
           </div>
         </div>
 
         <form className="track-search" onSubmit={doSearch}>
           <input
-            placeholder="เช่น YT260524-1042"
+            placeholder="เลขที่คำสั่งซื้อ (YT260524-1042) หรือเบอร์โทร"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -71,12 +86,25 @@ function OrderTracking({ member, onClose }) {
 
         {/* Search result */}
         {searched && (
-          result
-            ? <OrderTrackCard order={result} />
+          results.length > 0
+            ? <div className="track-myorders">
+                {searchedByPhone && (
+                  <div className="track-section-label">
+                    พบ {results.length} คำสั่งซื้อจากเบอร์ {query.trim()}
+                  </div>
+                )}
+                {results.map((o) => (
+                  <OrderTrackCard key={o.id} order={o} collapsed={searchedByPhone && results.length > 1} />
+                ))}
+              </div>
             : <div className="track-empty">
                 <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
-                <div style={{ fontSize: 16, color: "var(--c-ink)", marginBottom: 4 }}>ไม่พบคำสั่งซื้อนี้</div>
-                <div style={{ fontSize: 14, color: "var(--c-muted)" }}>กรุณาตรวจสอบเลขที่คำสั่งซื้ออีกครั้ง</div>
+                <div style={{ fontSize: 16, color: "var(--c-ink)", marginBottom: 4 }}>ไม่พบคำสั่งซื้อ</div>
+                <div style={{ fontSize: 14, color: "var(--c-muted)" }}>
+                  {searchedByPhone
+                    ? "ไม่พบคำสั่งซื้อจากเบอร์โทรนี้ กรุณาตรวจสอบอีกครั้ง"
+                    : "กรุณาตรวจสอบเลขที่คำสั่งซื้อหรือเบอร์โทรอีกครั้ง"}
+                </div>
               </div>
         )}
 

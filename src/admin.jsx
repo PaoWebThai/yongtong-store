@@ -341,6 +341,8 @@ function CustomersTab({ orders }) {
   const [search, setSearch] = useStateAd("");
   const [selected, setSelected] = useStateAd(null);
 
+  const [refreshing, setRefreshing] = useStateAd(false);
+
   useEffectAd(() => {
     let cancelled = false;
     (async () => {
@@ -349,6 +351,16 @@ function CustomersTab({ orders }) {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      const list = await loadMembers();
+      setMembers(list);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function ordersOf(m) {
     const norm = (s) => (s || "").replace(/[-\s]/g, "");

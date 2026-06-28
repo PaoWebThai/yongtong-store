@@ -10,15 +10,15 @@
 }
 .member-chip:hover { background: rgba(255, 235, 200, 0.22); }
 .member-chip-avatar {
-  width: 34px; height: 34px;
+  width: 40px; height: 40px;
   border-radius: 50%;
   background: linear-gradient(140deg, #FFE9C9, #F2B870);
   display: grid; place-items: center;
   font-weight: 700; color: #6B2710;
-  font-size: 15px;
+  font-size: 17px;
 }
-.member-chip-avatar svg { width: 18px; height: 18px; color: #6B2710; }
-.member-chip-text { font-size: 14px; font-weight: 500; }
+.member-chip-avatar svg { width: 21px; height: 21px; color: #6B2710; }
+.member-chip-text { font-size: 17px; font-weight: 500; }
 
 /* ===== Member auth modal ===== */
 .member-modal {
@@ -173,7 +173,6 @@
 .about {
   background: var(--c-bg);
   border-top: 1px solid var(--c-line);
-  border-bottom: 1px solid var(--c-line);
 }
 .about-inner {
   max-width: var(--maxw);

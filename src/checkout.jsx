@@ -9,17 +9,16 @@ const { useState: useStateCO } = React;
 
 function fmtBaht(n) { return "฿" + n.toLocaleString("th-TH"); }
 
-/* ---------- QR Code placeholder visual ---------- */
-function QRPlaceholder({ amount, ref }) {
-  // pseudo QR module pattern — deterministic from ref for visual stability
+/* ---------- QR Code visual (real PromptPay image, generated fallback) ---------- */
+function QRFallback() {
+  // pseudo QR module pattern — used only if the real QR image is missing
   const size = 21;
-  const seed = (ref || "yongtong").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const seed = 1771;
   const cells = [];
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const v = ((x * 7 + y * 13 + seed) * 2654435761) >>> 0;
       const on = (v & 0xff) < 130;
-      // skip finder pattern zones (we'll draw them separately)
       const inFinder =
         (x < 7 && y < 7) ||
         (x > size - 8 && y < 7) ||
@@ -35,26 +34,45 @@ function QRPlaceholder({ amount, ref }) {
     </>
   );
   return (
+    <>
+      <svg viewBox={`0 0 ${size} ${size}`} className="qr-svg">
+        <rect width={size} height={size} fill="white" />
+        {cells.map((c, i) => (
+          <rect key={i} x={c.x} y={c.y} width="1" height="1" fill="currentColor" />
+        ))}
+        {finder(0, 0)}
+        {finder(size - 7, 0)}
+        {finder(0, size - 7)}
+      </svg>
+      <div className="qr-logo-overlay">
+        <div className="brand-logo" style={{ width: 36, height: 36 }}>
+          <img src="/assets/yongtong-logo.jpeg" alt="ยงค์ทอง" />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function QRPlaceholder({ amount, payRef }) {
+  const [imgFailed, setImgFailed] = useStateCO(false);
+  const showReal = !imgFailed;
+  return (
     <div className="qr-display">
       <div className="qr-promptpay-head">
         <div className="qr-promptpay-logo">PromptPay</div>
         <div className="qr-promptpay-sub">Thai QR Payment</div>
       </div>
-      <div className="qr-frame">
-        <svg viewBox={`0 0 ${size} ${size}`} className="qr-svg">
-          <rect width={size} height={size} fill="white" />
-          {cells.map((c, i) => (
-            <rect key={i} x={c.x} y={c.y} width="1" height="1" fill="currentColor" />
-          ))}
-          {finder(0, 0)}
-          {finder(size - 7, 0)}
-          {finder(0, size - 7)}
-        </svg>
-        <div className="qr-logo-overlay">
-          <div className="brand-logo" style={{ width: 36, height: 36 }}>
-            <img src="/assets/yongtong-logo.jpeg" alt="ยงค์ทอง" />
-          </div>
-        </div>
+      <div className={`qr-frame ${showReal ? "qr-frame-real" : ""}`}>
+        {showReal ? (
+          <img
+            className="qr-real-img"
+            src="/assets/promptpay-qr.png"
+            alt="PromptPay QR ยงค์ทอง สังฆภัณฑ์"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <QRFallback />
+        )}
       </div>
       <div className="qr-amount-row">
         <div>
@@ -63,7 +81,7 @@ function QRPlaceholder({ amount, ref }) {
         </div>
         <div style={{ textAlign: "right" }}>
           <div className="qr-label">เลขอ้างอิง</div>
-          <div className="qr-ref">{ref}</div>
+          <div className="qr-ref">{payRef}</div>
         </div>
       </div>
       <div className="qr-payee">
@@ -411,7 +429,7 @@ function QRPayStep({ amount, payRef, submitting, onBack, onPaid }) {
 
       <div className="qrpay-right">
         <div className={`qrpay-qrwrap ${phase}`}>
-          <QRPlaceholder amount={amount} ref={payRef} />
+          <QRPlaceholder amount={amount} payRef={payRef} />
           {phase === "scanning" && (
             <div className="qrpay-overlay">
               <div className="qrpay-scanline"></div>
