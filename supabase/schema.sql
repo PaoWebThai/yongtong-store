@@ -31,6 +31,8 @@ create table if not exists public.products (
   includes     text[]       not null default '{}',
   care         text         default '',
   images       text[]       not null default '{}',   -- URLs ใน Storage
+  variants     jsonb        not null default '{}'::jsonb,   -- {options:[{name,choices[]}], matrix:{"a|b":{price,oldPrice}}}
+  detail_blocks jsonb       not null default '[]'::jsonb,   -- [{type:text|image|table, ...}]
   created_at   timestamptz  not null default now(),
   updated_at   timestamptz  not null default now()
 );

@@ -542,6 +542,7 @@ img { display: block; max-width: 100%; }
   transition: all 0.15s;
   white-space: nowrap;
 }
+.chip svg { width: 15px; height: 15px; vertical-align: -2px; }
 .chip:hover { background: #ECDFC4; color: var(--c-ink); }
 .chip.active {
   background: linear-gradient(140deg, var(--c-primary-2), var(--c-primary));

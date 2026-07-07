@@ -28,6 +28,8 @@ function fromDb(row) {
     includes: row.includes ?? [],
     care: row.care ?? "",
     images: row.images ?? [],
+    variants: row.variants && typeof row.variants === "object" ? row.variants : {},
+    detailBlocks: Array.isArray(row.detail_blocks) ? row.detail_blocks : [],
   };
 }
 
@@ -51,6 +53,8 @@ function toDb(p) {
     includes: p.includes ?? [],
     care: p.care ?? "",
     images: p.images ?? [],
+    variants: p.variants && typeof p.variants === "object" ? p.variants : {},
+    detail_blocks: Array.isArray(p.detailBlocks) ? p.detailBlocks : [],
   };
 }
 
@@ -88,7 +92,8 @@ async function updateProduct(id, patch) {
   Object.keys(dbPatch).forEach((k) => dbPatch[k] === undefined && delete dbPatch[k]);
   // remove keys not in patch (i.e., ones not user-changed)
   const userKeys = Object.keys(patch);
-  const mappedKeys = userKeys.map((k) => (k === "oldPrice" ? "old_price" : k));
+  const KEY_MAP = { oldPrice: "old_price", detailBlocks: "detail_blocks" };
+  const mappedKeys = userKeys.map((k) => KEY_MAP[k] || k);
   Object.keys(dbPatch).forEach((k) => { if (!mappedKeys.includes(k)) delete dbPatch[k]; });
 
   const { data, error } = await supabase
@@ -148,6 +153,8 @@ function blankProduct() {
     specs: [],
     includes: [],
     care: "",
+    variants: {},
+    detailBlocks: [],
   };
 }
 

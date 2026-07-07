@@ -574,12 +574,15 @@ function AdminOrderDetail({ order, onClose, onSetStatus, onMarkPaid }) {
 
         <h4 className="ad-h">รายการสินค้า</h4>
         <div className="ad-items">
-          {order.items.map((it) => (
-            <div className="ad-item" key={it.id}>
+          {order.items.map((it, idx) => (
+            <div className="ad-item" key={idx}>
               <div className="ad-item-thumb"><ProductPlaceholder product={it} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600 }}>{it.headline}</div>
                 <div style={{ fontSize: 13, color: "var(--c-muted)" }}>{it.name}</div>
+                {it.variant?.label && (
+                  <div style={{ fontSize: 12, color: "var(--c-primary)", fontWeight: 600, marginTop: 2 }}>ตัวเลือก: {it.variant.label}</div>
+                )}
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 13, color: "var(--c-muted)" }}>×{it.qty}</div>

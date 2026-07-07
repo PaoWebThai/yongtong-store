@@ -4,6 +4,7 @@ import React from "react";
 import { Icon, ProductPlaceholder } from "./icons.jsx";
 import { createOrder } from "./orders.jsx";
 import { updateMember } from "./members.jsx";
+import { cartLines } from "./cart-utils.jsx";
 
 const { useState: useStateCO } = React;
 
@@ -118,12 +119,9 @@ function Checkout({ open, onClose, cart, products, member, onComplete }) {
 
   if (!open) return null;
 
-  const lines = Object.entries(cart).map(([id, qty]) => {
-    const p = products.find((x) => x.id === Number(id));
-    return p ? { ...p, qty } : null;
-  }).filter(Boolean);
+  const lines = cartLines(cart, products);
 
-  const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
+  const subtotal = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   const shippingFee = lines.length ? 80 : 0;
   const total = subtotal + shippingFee;
 
@@ -469,13 +467,14 @@ function CheckoutSummary({ lines, subtotal, shippingFee, total }) {
       <h3 className="checkout-h">สรุปคำสั่งซื้อ</h3>
       <div className="summary-lines">
         {lines.map((l) => (
-          <div className="summary-line" key={l.id}>
-            <div className="summary-thumb"><ProductPlaceholder product={l} /></div>
+          <div className="summary-line" key={l.key}>
+            <div className="summary-thumb"><ProductPlaceholder product={l.product} /></div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div className="summary-name">{l.headline}</div>
+              <div className="summary-name">{l.product.headline}</div>
+              {l.variant && <div className="summary-variant">{l.variant.label}</div>}
               <div className="summary-sub">×{l.qty}</div>
             </div>
-            <div className="summary-price">{fmtBaht(l.price * l.qty)}</div>
+            <div className="summary-price">{fmtBaht(l.unitPrice * l.qty)}</div>
           </div>
         ))}
       </div>

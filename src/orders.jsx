@@ -79,13 +79,16 @@ function makeOrderId() {
 }
 
 async function createOrder({ items, products, shipping, payment, totals, memberId }) {
-  const lines = Object.entries(items).map(([id, qty]) => {
-    const p = products.find((x) => x.id === Number(id));
-    return p ? {
+  const lines = Object.entries(items).map(([, entry]) => {
+    const p = products.find((x) => x.id === Number(entry.id));
+    if (!p) return null;
+    const unitPrice = entry.variant?.price ?? p.price;
+    return {
       id: p.id, name: p.name, headline: p.headline,
       palette: p.palette, tag: p.tag,
-      price: p.price, qty,
-    } : null;
+      price: unitPrice, qty: entry.qty,
+      variant: entry.variant ? { key: entry.variant.key, label: entry.variant.label } : null,
+    };
   }).filter(Boolean);
 
   const row = {

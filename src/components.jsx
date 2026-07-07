@@ -2,7 +2,12 @@
 
 import React from "react";
 import { Icon, ProductPlaceholder } from "./icons.jsx";
-import { STORE, CATEGORIES } from "./data.jsx";
+import { STORE } from "./data.jsx";
+import { useCategories } from "./categories-store.jsx";
+import {
+  hasVariants, allCombos, comboKey, variantPrice, priceRange,
+  cartLines, setLineQty, removeLine,
+} from "./cart-utils.jsx";
 
 function fmt(n) {
   return n.toLocaleString("th-TH");
@@ -25,6 +30,7 @@ function TopBar({ onTrackClick }) {
 
 /* ---------- Header ---------- */
 function Header({ cartCount, wishCount, search, setSearch, activeCat, setActiveCat, onCartOpen, onWishOpen, member, onMemberClick }) {
+  const categories = useCategories();
   return (
     <header className="header">
       <div className="header-inner">
@@ -62,7 +68,7 @@ function Header({ cartCount, wishCount, search, setSearch, activeCat, setActiveC
 
       <nav className="catnav">
         <div className="catnav-inner">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
               key={c.id}
               className={`catnav-item ${activeCat === c.id ? "active" : ""}`}
@@ -208,6 +214,7 @@ function AboutStore() {
 }
 /* ---------- Filter Sidebar (Shopee style) ---------- */
 function FilterSidebar({ activeCat, setActiveCat, priceMin, priceMax, setPriceMin, setPriceMax, onReset }) {
+  const categories = useCategories();
   return (
     <div className="filter-side">
       <div className="filter-side-head">
@@ -217,7 +224,7 @@ function FilterSidebar({ activeCat, setActiveCat, priceMin, priceMax, setPriceMi
       <div className="filter-block">
         <div className="filter-block-title">ค้นหาตามหมวดหมู่</div>
         <ul className="filter-cat-list">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <li
               key={c.id}
               className={`filter-cat-item ${activeCat === c.id ? "active" : ""}`}
@@ -294,6 +301,9 @@ function SortBar({ sortBy, setSortBy, total }) {
 }
 
 function ProductCard({ product, onOpen, onAdd, onWish, isWished }) {
+  const variant = hasVariants(product);
+  const range = variant ? priceRange(product) : null;
+  const showRange = variant && range && range.min !== range.max;
   return (
     <article className="product-card" onClick={() => onOpen(product)}>
       <div className="product-media">
@@ -316,20 +326,29 @@ function ProductCard({ product, onOpen, onAdd, onWish, isWished }) {
         )}
         <button
           className="product-quickadd"
-          onClick={(e) => { e.stopPropagation(); onAdd(product); }}
-          title="เพิ่มลงตะกร้า"
+          onClick={(e) => { e.stopPropagation(); variant ? onOpen(product) : onAdd(product); }}
+          title={variant ? "เลือกตัวเลือกสินค้า" : "เพิ่มลงตะกร้า"}
         >
-          {Icon.cart}
+          {variant ? Icon.arrow : Icon.cart}
         </button>
       </div>
       <div className="product-info">
         <div className="product-name">{product.name}</div>
         <div className="product-price-row">
-          <span className="product-price">
-            <span className="currency">฿</span>{fmt(product.price)}
-          </span>
-          {product.oldPrice && (
-            <span className="product-oldprice">฿{fmt(product.oldPrice)}</span>
+          {showRange ? (
+            <span className="product-price">
+              <span className="currency">฿</span>{fmt(range.min)}<span className="price-range-sep"> - </span>
+              <span className="currency">฿</span>{fmt(range.max)}
+            </span>
+          ) : (
+            <>
+              <span className="product-price">
+                <span className="currency">฿</span>{fmt(variant ? range.min : product.price)}
+              </span>
+              {product.oldPrice && !variant && (
+                <span className="product-oldprice">฿{fmt(product.oldPrice)}</span>
+              )}
+            </>
           )}
         </div>
         <div className="product-meta">
@@ -344,11 +363,8 @@ function ProductCard({ product, onOpen, onAdd, onWish, isWished }) {
 /* ---------- Cart Drawer ---------- */
 function CartDrawer({ open, onClose, items, products, setCart, onCheckout }) {
   if (!open) return null;
-  const lines = Object.entries(items).map(([id, qty]) => {
-    const p = products.find((x) => x.id === Number(id));
-    return p ? { ...p, qty } : null;
-  }).filter(Boolean);
-  const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
+  const lines = cartLines(items, products);
+  const subtotal = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   const shipping = lines.length ? 80 : 0;
   const total = subtotal + shipping;
 
@@ -373,27 +389,21 @@ function CartDrawer({ open, onClose, items, products, setCart, onCheckout }) {
             </div>
           )}
           {lines.map((l) => (
-            <div className="cart-item" key={l.id}>
+            <div className="cart-item" key={l.key}>
               <div className="cart-item-thumb">
-                <ProductPlaceholder product={l} />
+                <ProductPlaceholder product={l.product} />
               </div>
               <div className="cart-item-body">
-                <div className="cart-item-name">{l.name}</div>
-                <div className="cart-item-price">฿{fmt(l.price)}</div>
+                <div className="cart-item-name">{l.product.name}</div>
+                {l.variant && <div className="cart-item-variant">{l.variant.label}</div>}
+                <div className="cart-item-price">฿{fmt(l.unitPrice)}</div>
                 <div className="cart-item-controls">
                   <div className="qty">
-                    <button className="qty-btn" onClick={() => {
-                      const next = { ...items };
-                      if (next[l.id] <= 1) delete next[l.id];
-                      else next[l.id] -= 1;
-                      setCart(next);
-                    }}>{Icon.minus}</button>
+                    <button className="qty-btn" onClick={() => setCart(setLineQty(items, l.key, l.qty - 1))}>{Icon.minus}</button>
                     <span className="qty-val">{l.qty}</span>
-                    <button className="qty-btn" onClick={() => setCart({ ...items, [l.id]: l.qty + 1 })}>{Icon.plus}</button>
+                    <button className="qty-btn" onClick={() => setCart(setLineQty(items, l.key, l.qty + 1))}>{Icon.plus}</button>
                   </div>
-                  <button className="cart-item-remove" onClick={() => {
-                    const next = { ...items }; delete next[l.id]; setCart(next);
-                  }}>ลบ</button>
+                  <button className="cart-item-remove" onClick={() => setCart(removeLine(items, l.key))}>ลบ</button>
                 </div>
               </div>
             </div>
@@ -414,14 +424,80 @@ function CartDrawer({ open, onClose, items, products, setCart, onCheckout }) {
   );
 }
 
+/* ---------- Detail content block (text / image / table) ---------- */
+function DetailBlock({ block, name }) {
+  if (!block || !block.type) return null;
+  if (block.type === "text") {
+    if (!block.value || !block.value.trim()) return null;
+    return <p className="pd-section-body">{block.value}</p>;
+  }
+  if (block.type === "image") {
+    if (!block.url) return null;
+    return (
+      <figure className="pd-detail-image">
+        <img src={block.url} alt={block.caption || name} />
+        {block.caption && <figcaption>{block.caption}</figcaption>}
+      </figure>
+    );
+  }
+  if (block.type === "table") {
+    const rows = Array.isArray(block.rows) ? block.rows : [];
+    if (!rows.length) return null;
+    const [head, ...body] = rows;
+    return (
+      <div className="pd-detail-table-wrap">
+        <table className="pd-detail-table">
+          {head && (
+            <thead>
+              <tr>{head.map((c, i) => <th key={i}>{c}</th>)}</tr>
+            </thead>
+          )}
+          <tbody>
+            {body.map((r, ri) => (
+              <tr key={ri}>{r.map((c, ci) => <td key={ci}>{c}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+  return null;
+}
+
 /* ---------- Product Modal ---------- */
 function ProductModal({ product, onClose, onAdd }) {
+  const categories = useCategories();
   const [qty, setQty] = React.useState(1);
   const [activeImg, setActiveImg] = React.useState(0);
-  React.useEffect(() => { setQty(1); setActiveImg(0); }, [product?.id]);
+  const [selected, setSelected] = React.useState({}); // { [groupName]: choice }
+  React.useEffect(() => { setQty(1); setActiveImg(0); setSelected({}); }, [product?.id]);
   if (!product) return null;
   const hasImages = product.images && product.images.length > 0;
   const galleryImages = hasImages ? product.images : [null]; // null means placeholder
+
+  // --- Variants ---
+  const variant = hasVariants(product);
+  const options = variant ? product.variants.options : [];
+  const allChosen = variant && options.every((o) => selected[o.name]);
+  const chosenKey = variant && allChosen ? comboKey(options.map((o) => selected[o.name])) : null;
+  const chosenPrice = chosenKey ? variantPrice(product, chosenKey) : null;
+  const range = variant ? priceRange(product) : null;
+
+  // ราคาที่แสดง: ถ้าเลือกครบใช้ราคาคู่ผสม, ไม่งั้นใช้ราคาเดิม/ช่วงราคา
+  const displayPrice = chosenPrice ? chosenPrice.price : (variant ? range.min : product.price);
+  const displayOld = chosenPrice ? chosenPrice.oldPrice : (variant ? null : product.oldPrice);
+
+  function buildVariant() {
+    if (!variant || !allChosen) return null;
+    return {
+      key: chosenKey,
+      label: options.map((o) => selected[o.name]).join(" · "),
+      price: chosenPrice ? chosenPrice.price : range.min,
+      oldPrice: chosenPrice ? chosenPrice.oldPrice : null,
+    };
+  }
+
+  const canAdd = !variant || allChosen;
 
   function renderGalleryItem(img, fullsize = false) {
     if (img) return <img src={img} alt={product.name} className="pad-img" />;
@@ -430,6 +506,7 @@ function ProductModal({ product, onClose, onAdd }) {
 
   const hasDetails =
     (product.description && product.description.trim()) ||
+    (product.detailBlocks && product.detailBlocks.length > 0) ||
     (product.specs && product.specs.length > 0) ||
     (product.includes && product.includes.length > 0) ||
     (product.care && product.care.trim());
@@ -472,7 +549,7 @@ function ProductModal({ product, onClose, onAdd }) {
 
           {/* RIGHT: Info */}
           <div className="pd-info">
-            <div className="modal-cat">{CATEGORIES.find((c) => c.id === product.cat)?.label}</div>
+            <div className="modal-cat">{categories.find((c) => c.id === product.cat)?.label}</div>
             <h2 className="modal-name">{product.name}</h2>
             <div className="modal-rating-row">
               <span>ขายแล้ว <strong>{product.sold}</strong> ชิ้น</span>
@@ -480,9 +557,13 @@ function ProductModal({ product, onClose, onAdd }) {
               <span>จัดส่งจาก <strong>{product.location}</strong></span>
             </div>
             <div className="modal-price-row">
-              <span className="modal-price">฿{fmt(product.price)}</span>
-              {product.oldPrice && <span className="modal-oldprice">฿{fmt(product.oldPrice)}</span>}
-              {product.discount > 0 && <span className="modal-discount">ประหยัด {product.discount}%</span>}
+              {variant && !allChosen && range.min !== range.max ? (
+                <span className="modal-price">฿{fmt(range.min)} - ฿{fmt(range.max)}</span>
+              ) : (
+                <span className="modal-price">฿{fmt(displayPrice)}</span>
+              )}
+              {displayOld && <span className="modal-oldprice">฿{fmt(displayOld)}</span>}
+              {!variant && product.discount > 0 && <span className="modal-discount">ประหยัด {product.discount}%</span>}
             </div>
 
             <div className="pd-perks">
@@ -509,6 +590,30 @@ function ProductModal({ product, onClose, onAdd }) {
               </div>
             </div>
 
+            {variant && (
+              <div className="pd-variants">
+                {options.map((o) => (
+                  <div className="pd-variant-group" key={o.name}>
+                    <div className="pd-variant-label">{o.name}</div>
+                    <div className="pd-variant-choices">
+                      {o.choices.map((ch) => (
+                        <button
+                          key={ch}
+                          className={`pd-variant-chip ${selected[o.name] === ch ? "active" : ""}`}
+                          onClick={() => setSelected((s) => ({ ...s, [o.name]: ch }))}
+                        >
+                          {ch}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {!allChosen && (
+                  <div className="pd-variant-hint">{Icon.info} กรุณาเลือกตัวเลือกให้ครบก่อนสั่งซื้อ</div>
+                )}
+              </div>
+            )}
+
             <div className="modal-qty-row">
               <span>จำนวน</span>
               <div className="qty">
@@ -519,10 +624,10 @@ function ProductModal({ product, onClose, onAdd }) {
               <span style={{ color: "var(--c-muted)", fontSize: 14 }}>มีในสต็อก</span>
             </div>
             <div className="modal-actions">
-              <button className="btn btn-outline" onClick={() => { onAdd(product, qty); }}>
+              <button className="btn btn-outline" disabled={!canAdd} onClick={() => { if (canAdd) onAdd(product, qty, buildVariant()); }}>
                 {Icon.cart} เพิ่มลงตะกร้า
               </button>
-              <button className="btn btn-primary" onClick={() => { onAdd(product, qty); onClose(); }}>
+              <button className="btn btn-primary" disabled={!canAdd} onClick={() => { if (canAdd) { onAdd(product, qty, buildVariant()); onClose(); } }}>
                 ซื้อทันที {Icon.arrow}
               </button>
             </div>
@@ -532,10 +637,16 @@ function ProductModal({ product, onClose, onAdd }) {
         {/* DETAIL SECTIONS */}
         {hasDetails && (
           <div className="pd-details">
-            {product.description && product.description.trim() && (
+            {((product.description && product.description.trim()) ||
+              (product.detailBlocks && product.detailBlocks.length > 0)) && (
               <section className="pd-section">
                 <h3 className="pd-section-title">{Icon.info} รายละเอียดสินค้า</h3>
-                <p className="pd-section-body">{product.description}</p>
+                {product.description && product.description.trim() && (
+                  <p className="pd-section-body">{product.description}</p>
+                )}
+                {product.detailBlocks && product.detailBlocks.map((b, i) => (
+                  <DetailBlock key={i} block={b} name={product.name} />
+                ))}
               </section>
             )}
 

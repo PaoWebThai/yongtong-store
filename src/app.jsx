@@ -7,6 +7,7 @@ import {
   CartDrawer, ProductModal, Footer,
 } from "./components.jsx";
 import { loadProducts } from "./products-store.jsx";
+import { cartCount as cartCountOf, addToCart as addToCartMap } from "./cart-utils.jsx";
 import { getCurrentMember, refreshCurrentMember, logoutMember } from "./members.jsx";
 import { loadOrders, isAdmin } from "./orders.jsx";
 import { Checkout } from "./checkout.jsx";
@@ -79,7 +80,7 @@ function App() {
     return () => { cancelled = true; };
   }, [memberMenuOpen, member?.phone]);
 
-  const cartCount = Object.values(cart).reduce((s, n) => s + n, 0);
+  const cartCount = cartCountOf(cart);
 
   function pushToast(msg) {
     const id = Math.random().toString(36).slice(2);
@@ -87,9 +88,10 @@ function App() {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2200);
   }
 
-  function addToCart(product, qty = 1) {
-    setCart((c) => ({ ...c, [product.id]: (c[product.id] || 0) + qty }));
-    pushToast(`เพิ่ม "${product.headline}" ลงตะกร้าแล้ว (${qty} ชิ้น)`);
+  function addToCart(product, qty = 1, variant = null) {
+    setCart((c) => addToCartMap(c, product, qty, variant));
+    const suffix = variant?.label ? ` (${variant.label})` : "";
+    pushToast(`เพิ่ม "${product.headline}"${suffix} ลงตะกร้าแล้ว (${qty} ชิ้น)`);
   }
 
   function toggleWish(id) {
