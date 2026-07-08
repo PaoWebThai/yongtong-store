@@ -287,6 +287,146 @@
 }
 .pe-image-add svg { width: 26px; height: 26px; }
 
+/* ===== RichEditor (WYSIWYG คำอธิบายสินค้า) ===== */
+.rich-wrap {
+  border: 1.5px solid var(--c-line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+.rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--c-surface-2);
+  border-bottom: 1px solid var(--c-line);
+}
+.rich-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--c-line);
+  background: white;
+  color: var(--c-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rich-btn:hover { border-color: var(--c-primary); color: var(--c-primary); }
+.rich-btn svg { width: 17px; height: 17px; }
+
+.rich-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 12px;
+  background: rgba(217, 122, 44, 0.06);
+  border-bottom: 1px solid var(--c-line);
+  font-size: 13px;
+  color: var(--c-ink-2);
+}
+.rich-ctx-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-weight: 700; color: var(--c-primary);
+}
+.rich-ctx-label svg { width: 15px; height: 15px; }
+.rich-size { display: inline-flex; align-items: center; gap: 8px; }
+.rich-size input[type="range"] { width: 120px; accent-color: var(--c-primary); }
+.rich-size b { min-width: 38px; color: var(--c-ink); }
+.rich-align { display: inline-flex; gap: 4px; }
+.rich-align button,
+.rich-context > button {
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--c-line);
+  background: white;
+  color: var(--c-ink-2);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: all 0.15s;
+}
+.rich-align button:hover,
+.rich-context > button:hover { border-color: var(--c-primary); color: var(--c-primary); }
+.rich-align button.on {
+  border-color: var(--c-primary);
+  background: rgba(217, 122, 44, 0.12);
+  color: var(--c-primary);
+}
+.rich-context > button svg { width: 14px; height: 14px; }
+.rich-del { color: #B91C1C !important; }
+.rich-del:hover { border-color: #FCA5A5 !important; background: #FEE2E2 !important; }
+
+.rich-editor {
+  min-height: 320px;
+  max-height: 620px;
+  overflow-y: auto;
+  padding: 16px 18px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--c-ink);
+  outline: none;
+}
+.rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--c-muted);
+  pointer-events: none;
+}
+.rich-editor:focus { box-shadow: inset 0 0 0 2px rgba(217, 122, 44, 0.15); }
+.rich-editor::after { content: ""; display: block; clear: both; }
+.rich-hint {
+  font-size: 12.5px;
+  color: var(--c-muted);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+/* Shared rich content — ทั้งใน editor และหน้าลูกค้า (.pd-rich) */
+.rich-editor img,
+.pd-rich img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+.rich-editor img { cursor: pointer; }
+.rich-editor img.selected { outline: 3px solid var(--c-primary); outline-offset: 2px; }
+img.align-left  { float: left;  margin: 6px 16px 10px 0; }
+img.align-right { float: right; margin: 6px 0 10px 16px; }
+img.align-center { display: block; float: none; margin: 14px auto; }
+
+.rich-editor table,
+.pd-rich table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 14px 0;
+  font-size: 14px;
+}
+.rich-editor th, .rich-editor td,
+.pd-rich th, .pd-rich td {
+  border: 1px solid var(--c-line);
+  padding: 9px 12px;
+  text-align: left;
+  color: var(--c-ink);
+  min-width: 40px;
+}
+.rich-editor th,
+.pd-rich th {
+  background: var(--c-surface-2);
+  font-weight: 700;
+  color: var(--c-ink-2);
+}
+.pd-rich { white-space: normal; }
+.pd-rich::after { content: ""; display: block; clear: both; }
+.pd-rich p { margin: 0 0 10px; }
+
 /* Specs editor */
 .specs-rows {
   display: flex; flex-direction: column;

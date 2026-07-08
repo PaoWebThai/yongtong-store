@@ -483,22 +483,15 @@ function ProductEditor({ initial, onClose, onSave }) {
                 </div>
                 <div className="field full">
                   <label>คำอธิบายสินค้า (แสดงในหน้ารายละเอียด)</label>
-                  <textarea
-                    rows="6"
+                  <RichEditor
                     value={p.description}
-                    onChange={(e) => set("description", e.target.value)}
-                    placeholder="อธิบายความพิเศษ วัสดุ ที่มาของงาน เหมาะกับโอกาสไหน..."
+                    onChange={(html) => set("description", html)}
                   />
+                  <div className="rich-hint">
+                    พิมพ์ข้อความได้ตามปกติ · กด “แทรกรูปภาพ” เพื่อวางรูปในเนื้อหา (คลิกที่รูปเพื่อปรับขนาด/จัดวาง) · กด “แทรกตาราง” เพื่อเพิ่มตาราง
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="pe-section">
-              <div className="pe-section-title">เนื้อหารายละเอียด (แทรกรูป / ตาราง)</div>
-              <DetailBlocksEditor
-                value={p.detailBlocks || []}
-                onChange={(v) => set("detailBlocks", v)}
-              />
             </div>
 
             <div className="pe-section">
@@ -840,137 +833,227 @@ function VariantsEditor({ value, onChange }) {
   );
 }
 
-/* ---------- Detail content blocks editor (text / image / table) ---------- */
-function DetailBlocksEditor({ value, onChange }) {
-  const blocks = Array.isArray(value) ? value : [];
+/* ============================================================
+   RichEditor — WYSIWYG สำหรับคำอธิบายสินค้า
+   พิมพ์ข้อความ + แทรกรูป (ปรับขนาด/จัดวาง) + แทรกตาราง ในช่องเดียว
+   เก็บค่าเป็น HTML string ใน p.description
+   ============================================================ */
+function richIsHtml(s) {
+  return typeof s === "string" && /<(img|table|p|br|div|span|strong|em|ul|ol|li|figure|h[1-6])\b/i.test(s);
+}
+function richPlainToHtml(s) {
+  if (!s) return "";
+  return String(s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
+}
+
+function RichEditor({ value, onChange }) {
+  const ref = React.useRef(null);
+  const initial = React.useRef(richIsHtml(value) ? (value || "") : richPlainToHtml(value));
+  const savedRange = React.useRef(null);
+  const [selImg, setSelImg] = useStatePM(null);
+  const [imgW, setImgW] = useStatePM(50);
+  const [inTable, setInTable] = useStatePM(false);
   const [uploading, setUploading] = useStatePM(false);
 
-  function update(i, patch) {
-    onChange(blocks.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
+  function emit() { if (ref.current) onChange(ref.current.innerHTML); }
+
+  function saveSel() {
+    const s = window.getSelection();
+    if (s && s.rangeCount && ref.current && ref.current.contains(s.anchorNode)) {
+      savedRange.current = s.getRangeAt(0).cloneRange();
+    }
   }
-  function add(type) {
-    const base = type === "text" ? { type, value: "" }
-      : type === "image" ? { type, url: "", caption: "" }
-      : { type: "table", rows: [["หัวข้อ 1", "หัวข้อ 2"], ["", ""]] };
-    onChange([...blocks, base]);
+
+  function currentTable() {
+    const s = window.getSelection();
+    let n = s && s.anchorNode;
+    while (n && n !== ref.current) {
+      if (n.tagName === "TABLE") return n;
+      n = n.parentNode;
+    }
+    return null;
   }
-  function remove(i) { onChange(blocks.filter((_, idx) => idx !== i)); }
-  function move(i, dir) {
-    const j = i + dir;
-    if (j < 0 || j >= blocks.length) return;
-    const next = blocks.slice();
-    [next[i], next[j]] = [next[j], next[i]];
-    onChange(next);
+
+  function syncContext() {
+    saveSel();
+    setInTable(!!currentTable());
   }
-  async function uploadImage(i, file) {
+
+  function resolveRange() {
+    const s = window.getSelection();
+    // 1) ใช้ selection ปัจจุบันถ้าอยู่ในกล่อง editor
+    if (s && s.rangeCount && ref.current.contains(s.anchorNode)) {
+      return s.getRangeAt(0);
+    }
+    // 2) ใช้ตำแหน่งที่บันทึกไว้ล่าสุด
+    if (savedRange.current && ref.current.contains(savedRange.current.startContainer)) {
+      s.removeAllRanges(); s.addRange(savedRange.current);
+      return savedRange.current;
+    }
+    // 3) fallback: ท้ายเนื้อหา
+    const r = document.createRange();
+    r.selectNodeContents(ref.current); r.collapse(false);
+    s.removeAllRanges(); s.addRange(r);
+    return r;
+  }
+
+  function insertNode(node, addTrailingP) {
+    ref.current.focus();
+    const s = window.getSelection();
+    const r = resolveRange();
+    r.deleteContents();
+    r.insertNode(node);
+    let after = node;
+    if (addTrailingP) {
+      const pEl = document.createElement("p");
+      pEl.innerHTML = "<br>";
+      node.after(pEl);
+      after = pEl;
+    }
+    const nr = document.createRange();
+    nr.setStartAfter(after); nr.collapse(true);
+    s.removeAllRanges(); s.addRange(nr);
+    savedRange.current = nr.cloneRange();
+    emit();
+  }
+
+  async function insertImage(file) {
     if (!file) return;
     setUploading(true);
     try {
       const url = await resizeImageFile(file, 1200);
-      update(i, { url });
+      const img = document.createElement("img");
+      img.src = url;
+      img.className = "rich-img align-center";
+      img.style.width = "50%";
+      insertNode(img, false);
     } catch (e) { console.error(e); alert("อัปโหลดรูปไม่สำเร็จ"); }
     finally { setUploading(false); }
   }
-  function tableSet(i, ri, ci, val) {
-    update(i, { rows: blocks[i].rows.map((r, x) => (x === ri ? r.map((c, y) => (y === ci ? val : c)) : r)) });
+
+  function insertTable() {
+    const t = document.createElement("table");
+    t.className = "rich-table";
+    const tb = document.createElement("tbody");
+    for (let ri = 0; ri < 2; ri++) {
+      const tr = document.createElement("tr");
+      for (let ci = 0; ci < 2; ci++) {
+        const cell = document.createElement(ri === 0 ? "th" : "td");
+        cell.innerHTML = "&nbsp;";
+        tr.appendChild(cell);
+      }
+      tb.appendChild(tr);
+    }
+    t.appendChild(tb);
+    insertNode(t, true);
   }
-  function tableAddRow(i) {
-    const cols = blocks[i].rows[0]?.length || 2;
-    update(i, { rows: [...blocks[i].rows, Array(cols).fill("")] });
+
+  function onEditorClick(e) {
+    if (e.target.tagName === "IMG") {
+      if (selImg && selImg !== e.target) selImg.classList.remove("selected");
+      e.target.classList.add("selected");
+      setSelImg(e.target);
+      setImgW(parseInt(e.target.style.width) || 50);
+    } else if (selImg) {
+      selImg.classList.remove("selected");
+      setSelImg(null);
+    }
+    syncContext();
   }
-  function tableAddCol(i) {
-    update(i, { rows: blocks[i].rows.map((r) => [...r, ""]) });
+
+  function applyWidth(w) {
+    setImgW(w);
+    if (selImg) { selImg.style.width = w + "%"; emit(); }
   }
-  function tableDelRow(i, ri) {
-    if (blocks[i].rows.length <= 1) return;
-    update(i, { rows: blocks[i].rows.filter((_, x) => x !== ri) });
+  function applyAlign(a) {
+    if (!selImg) return;
+    selImg.classList.remove("align-left", "align-center", "align-right");
+    selImg.classList.add("align-" + a);
+    emit();
   }
-  function tableDelCol(i) {
-    if ((blocks[i].rows[0]?.length || 0) <= 1) return;
-    update(i, { rows: blocks[i].rows.map((r) => r.slice(0, -1)) });
+  function deleteImg() {
+    if (!selImg) return;
+    selImg.remove(); setSelImg(null); emit();
   }
+
+  function tblAddRow() {
+    const t = currentTable(); if (!t) return;
+    const cols = t.rows[0] ? t.rows[0].cells.length : 2;
+    const body = t.tBodies[0] || t;
+    const tr = body.insertRow(-1);
+    for (let i = 0; i < cols; i++) { const td = tr.insertCell(-1); td.innerHTML = "&nbsp;"; }
+    emit();
+  }
+  function tblAddCol() {
+    const t = currentTable(); if (!t) return;
+    Array.from(t.rows).forEach((r, ri) => {
+      if (ri === 0) { const th = document.createElement("th"); th.innerHTML = "&nbsp;"; r.appendChild(th); }
+      else { const td = r.insertCell(-1); td.innerHTML = "&nbsp;"; }
+    });
+    emit();
+  }
+  function tblDelete() {
+    const t = currentTable(); if (!t) return;
+    t.remove(); setInTable(false); emit();
+  }
+
+  const keepSel = (e) => e.preventDefault(); // ป้องกันไม่ให้ toolbar แย่ง selection
 
   return (
-    <div className="db-editor">
-      {blocks.length === 0 && (
-        <div style={{ fontSize: 13, color: "var(--c-muted)" }}>
-          ยังไม่มีเนื้อหา — เพิ่มข้อความ รูปภาพ หรือ ตาราง เพื่ออธิบายสินค้าให้ลูกค้าเห็นภาพชัดขึ้น
+    <div className="rich-wrap">
+      <div className="rich-toolbar" onMouseDown={keepSel}>
+        <label className="rich-btn">
+          <input type="file" accept="image/*" hidden
+            onChange={(e) => { insertImage(e.target.files?.[0]); e.target.value = ""; }} />
+          {Icon.image} {uploading ? "กำลังอัปโหลด..." : "แทรกรูปภาพ"}
+        </label>
+        <button type="button" className="rich-btn" onClick={insertTable}>
+          {Icon.table} แทรกตาราง
+        </button>
+      </div>
+
+      {selImg && (
+        <div className="rich-context" onMouseDown={keepSel}>
+          <span className="rich-ctx-label">{Icon.image} รูปภาพ</span>
+          <span className="rich-size">
+            ขนาด
+            <input type="range" min="15" max="100" value={imgW}
+              onChange={(e) => applyWidth(Number(e.target.value))} />
+            <b>{imgW}%</b>
+          </span>
+          <span className="rich-align">
+            <button type="button" className={selImg.classList.contains("align-left") ? "on" : ""} onClick={() => applyAlign("left")} title="ชิดซ้าย">⬅</button>
+            <button type="button" className={selImg.classList.contains("align-center") ? "on" : ""} onClick={() => applyAlign("center")} title="กึ่งกลาง">⬛</button>
+            <button type="button" className={selImg.classList.contains("align-right") ? "on" : ""} onClick={() => applyAlign("right")} title="ชิดขวา">➡</button>
+          </span>
+          <button type="button" className="rich-del" onClick={deleteImg}>{Icon.trash} ลบรูป</button>
         </div>
       )}
-      {blocks.map((b, i) => (
-        <div className="db-block" key={i}>
-          <div className="db-block-head">
-            <span className="db-block-type">
-              {b.type === "text" ? "ข้อความ" : b.type === "image" ? "รูปภาพ" : "ตาราง"}
-            </span>
-            <div className="db-block-tools">
-              <button type="button" onClick={() => move(i, -1)} title="เลื่อนขึ้น">↑</button>
-              <button type="button" onClick={() => move(i, 1)} title="เลื่อนลง">↓</button>
-              <button type="button" onClick={() => remove(i)} title="ลบ">{Icon.trash}</button>
-            </div>
-          </div>
 
-          {b.type === "text" && (
-            <textarea rows="3" value={b.value} placeholder="พิมพ์ข้อความ..."
-              onChange={(e) => update(i, { value: e.target.value })} />
-          )}
-
-          {b.type === "image" && (
-            <div className="db-image">
-              {b.url
-                ? <img src={b.url} alt="" className="db-image-preview" />
-                : (
-                  <label className="db-upload">
-                    <input type="file" accept="image/*" hidden
-                      onChange={(e) => uploadImage(i, e.target.files?.[0])} />
-                    {Icon.upload} {uploading ? "กำลังอัปโหลด..." : "อัปโหลดรูป"}
-                  </label>
-                )}
-              <input placeholder="คำบรรยายใต้ภาพ (ถ้ามี)" value={b.caption || ""}
-                onChange={(e) => update(i, { caption: e.target.value })} />
-              {b.url && (
-                <button type="button" className="chip" onClick={() => update(i, { url: "" })}>
-                  {Icon.refresh} เปลี่ยนรูป
-                </button>
-              )}
-            </div>
-          )}
-
-          {b.type === "table" && (
-            <div className="db-table">
-              <table>
-                <tbody>
-                  {b.rows.map((r, ri) => (
-                    <tr key={ri}>
-                      {r.map((c, ci) => (
-                        <td key={ci}>
-                          <input value={c} placeholder={ri === 0 ? "หัวตาราง" : ""}
-                            onChange={(e) => tableSet(i, ri, ci, e.target.value)} />
-                        </td>
-                      ))}
-                      <td className="db-table-rowdel">
-                        <button type="button" onClick={() => tableDelRow(i, ri)} title="ลบแถว">{Icon.close}</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="db-table-actions">
-                <button type="button" className="chip" onClick={() => tableAddRow(i)}>{Icon.plus} แถว</button>
-                <button type="button" className="chip" onClick={() => tableAddCol(i)}>{Icon.plus} คอลัมน์</button>
-                <button type="button" className="chip" onClick={() => tableDelCol(i)}>{Icon.close} คอลัมน์สุดท้าย</button>
-              </div>
-              <div style={{ fontSize: 12, color: "var(--c-muted)" }}>แถวแรกคือหัวตาราง</div>
-            </div>
-          )}
+      {inTable && !selImg && (
+        <div className="rich-context" onMouseDown={keepSel}>
+          <span className="rich-ctx-label">{Icon.table} ตาราง</span>
+          <button type="button" onClick={tblAddRow}>{Icon.plus} แถว</button>
+          <button type="button" onClick={tblAddCol}>{Icon.plus} คอลัมน์</button>
+          <button type="button" className="rich-del" onClick={tblDelete}>{Icon.trash} ลบตาราง</button>
         </div>
-      ))}
+      )}
 
-      <div className="db-add-row">
-        <button type="button" className="chip" onClick={() => add("text")}>{Icon.plus} ข้อความ</button>
-        <button type="button" className="chip" onClick={() => add("image")}>{Icon.plus} รูปภาพ</button>
-        <button type="button" className="chip" onClick={() => add("table")}>{Icon.plus} ตาราง</button>
-      </div>
+      <div
+        ref={ref}
+        className="rich-editor"
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder="อธิบายความพิเศษ วัสดุ ที่มาของงาน — แทรกรูปและตารางในเนื้อหาได้เลย..."
+        onInput={emit}
+        onKeyUp={syncContext}
+        onMouseUp={syncContext}
+        onBlur={saveSel}
+        onClick={onEditorClick}
+        dangerouslySetInnerHTML={{ __html: initial.current }}
+      />
     </div>
   );
 }

@@ -642,7 +642,9 @@ function ProductModal({ product, onClose, onAdd }) {
               <section className="pd-section">
                 <h3 className="pd-section-title">{Icon.info} รายละเอียดสินค้า</h3>
                 {product.description && product.description.trim() && (
-                  <p className="pd-section-body">{product.description}</p>
+                  /<[a-z][\s\S]*>/i.test(product.description)
+                    ? <div className="pd-section-body pd-rich" dangerouslySetInnerHTML={{ __html: product.description }} />
+                    : <p className="pd-section-body">{product.description}</p>
                 )}
                 {product.detailBlocks && product.detailBlocks.map((b, i) => (
                   <DetailBlock key={i} block={b} name={product.name} />
