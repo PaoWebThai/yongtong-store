@@ -4,6 +4,7 @@ import React from "react";
 import { Icon, ProductPlaceholder } from "./icons.jsx";
 import { PALETTES } from "./data.jsx";
 import { useCategories, addCategory, deleteCategory } from "./categories-store.jsx";
+import { loadPromoSlides, savePromoSlides, DEFAULT_PROMO_SLIDES } from "./settings-store.jsx";
 import { allCombos, hasVariants, priceRange } from "./cart-utils.jsx";
 import {
   loadProducts, updateProduct, addProduct, deleteProduct,
@@ -28,6 +29,7 @@ function ProductManager() {
   const [search, setSearch] = useStatePM("");
   const [confirmDel, setConfirmDel] = useStatePM(null);
   const [catMgrOpen, setCatMgrOpen] = useStatePM(false);
+  const [promoMgrOpen, setPromoMgrOpen] = useStatePM(false);
   const [pmToasts, setPmToasts] = useStatePM([]);
 
   useEffectPM(() => {
@@ -147,6 +149,9 @@ function ProductManager() {
           <button className="btn btn-outline" onClick={() => setCatMgrOpen(true)}>
             {Icon.list} จัดการหมวดหมู่
           </button>
+          <button className="btn btn-outline" onClick={() => setPromoMgrOpen(true)}>
+            {Icon.image} สไลด์หน้าร้าน
+          </button>
           <button className="btn btn-primary" onClick={() => setEditing(blankProduct())}>
             {Icon.plus} เพิ่มสินค้าใหม่
           </button>
@@ -214,6 +219,10 @@ function ProductManager() {
         />
       )}
 
+      {promoMgrOpen && (
+        <PromoManager onClose={() => setPromoMgrOpen(false)} onToast={toast} />
+      )}
+
       {confirmDel && (
         <div className="modal-backdrop" onClick={() => setConfirmDel(null)}>
           <div className="modal" style={{ width: "min(440px, 100%)", padding: "30px 32px" }} onClick={(e) => e.stopPropagation()}>
@@ -248,6 +257,7 @@ function ProductEditor({ initial, onClose, onSave }) {
   const categories = useCategories();
   const [p, setP] = useStatePM({ ...blankProduct(), ...initial });
   const [errs, setErrs] = useStatePM({});
+  const [dragIdx, setDragIdx] = useStatePM(null);
 
   const fileInputRef = React.useRef();
 
@@ -292,6 +302,16 @@ function ProductEditor({ initial, onClose, onSave }) {
     const cur = (p.images || []).slice();
     const [m] = cur.splice(idx, 1);
     cur.unshift(m);
+    set("images", cur);
+  }
+
+  // จัดเรียงรูปใหม่ (ลาก-วาง หรือ ปุ่มเลื่อนซ้าย/ขวา)
+  function moveImage(from, to) {
+    if (from == null || to == null || from === to) return;
+    const cur = (p.images || []).slice();
+    if (to < 0 || to >= cur.length) return;
+    const [m] = cur.splice(from, 1);
+    cur.splice(to, 0, m);
     set("images", cur);
   }
 
@@ -416,13 +436,32 @@ function ProductEditor({ initial, onClose, onSave }) {
               <div className="pe-section-title">รูปภาพสินค้า (สูงสุด {MAX_IMAGES} รูป)</div>
               <div className="pe-images">
                 {(p.images || []).map((src, i) => (
-                  <div className="pe-image-tile" key={i}>
-                    <img src={src} alt="" />
+                  <div
+                    className={`pe-image-tile ${dragIdx === i ? "dragging" : ""}`}
+                    key={i}
+                    draggable
+                    onDragStart={() => setDragIdx(i)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); moveImage(dragIdx, i); setDragIdx(null); }}
+                    onDragEnd={() => setDragIdx(null)}
+                  >
+                    <img src={src} alt="" draggable={false} />
                     {i === 0 && <div className="pe-image-cover">รูปหลัก</div>}
+                    <div className="pe-image-order">{i + 1}</div>
                     <div className="pe-image-actions">
+                      {i !== 0 && (
+                        <button type="button" onClick={() => moveImage(i, i - 1)} title="เลื่อนซ้าย">
+                          {Icon.chevronLeft}
+                        </button>
+                      )}
                       {i !== 0 && (
                         <button type="button" onClick={() => moveImageFirst(i)} title="ตั้งเป็นรูปหลัก">
                           {Icon.starOutline}
+                        </button>
+                      )}
+                      {i !== (p.images || []).length - 1 && (
+                        <button type="button" onClick={() => moveImage(i, i + 1)} title="เลื่อนขวา">
+                          {Icon.chevronRight}
                         </button>
                       )}
                       <button type="button" onClick={() => removeImage(i)} title="ลบ">
@@ -448,7 +487,7 @@ function ProductEditor({ initial, onClose, onSave }) {
                 )}
               </div>
               <div style={{ fontSize: 12, color: "var(--c-muted)" }}>
-                รูปแรกคือรูปหลักที่แสดงในหน้าร้าน · คลิกดาวเพื่อเปลี่ยนรูปหลัก
+                รูปแรก (หมายเลข 1) คือรูปหลัก · ลากรูปเพื่อจัดเรียงลำดับ หรือใช้ปุ่มลูกศรซ้าย/ขวา · คลิกดาวเพื่อตั้งเป็นรูปหลัก
               </div>
             </div>
 
@@ -722,9 +761,22 @@ function VariantsEditor({ value, onChange }) {
   const options = enabled ? value.options : [];
   const matrix = value?.matrix || {};
   const [drafts, setDrafts] = useStatePM({}); // groupIndex -> new choice text
+  const [uploadingKey, setUploadingKey] = useStatePM(null);
 
   function commit(nextOptions, nextMatrix) {
     onChange({ options: nextOptions, matrix: nextMatrix });
+  }
+  function setImage(key, url) {
+    commit(options, { ...matrix, [key]: { ...matrix[key], image: url } });
+  }
+  async function uploadImage(key, file) {
+    if (!file) return;
+    setUploadingKey(key);
+    try {
+      const url = await resizeImageFile(file, 1000);
+      setImage(key, url);
+    } catch (e) { console.error(e); alert("อัปโหลดรูปไม่สำเร็จ"); }
+    finally { setUploadingKey(null); }
   }
   function enable() { onChange({ options: [{ name: "", choices: [] }], matrix: {} }); }
   function disable() { onChange({}); }
@@ -807,21 +859,40 @@ function VariantsEditor({ value, onChange }) {
 
       {combos.length > 0 && (
         <div className="var-matrix">
-          <div className="var-matrix-title">กำหนดราคาแต่ละแบบ ({combos.length} แบบ)</div>
+          <div className="var-matrix-title">กำหนดราคา + รูปแต่ละแบบ ({combos.length} แบบ)</div>
           <div className="var-matrix-head">
-            <span>ตัวเลือก</span><span>ราคา (฿)</span><span>ราคาเดิม (฿)</span>
+            <span>รูป</span><span>ตัวเลือก</span><span>ราคา (฿)</span><span>ราคาเดิม (฿)</span>
           </div>
-          {combos.map((c) => (
-            <div className="var-matrix-row" key={c.key}>
-              <span className="var-matrix-label">{c.label}</span>
-              <input type="number" min="0" placeholder="0"
-                value={matrix[c.key]?.price ?? ""}
-                onChange={(e) => setPrice(c.key, "price", e.target.value)} />
-              <input type="number" min="0" placeholder="—"
-                value={matrix[c.key]?.oldPrice ?? ""}
-                onChange={(e) => setPrice(c.key, "oldPrice", e.target.value)} />
-            </div>
-          ))}
+          {combos.map((c) => {
+            const img = matrix[c.key]?.image;
+            return (
+              <div className="var-matrix-row" key={c.key}>
+                <label className={`var-matrix-img ${img ? "has" : ""}`} title="อัปโหลดรูปสำหรับแบบนี้">
+                  <input type="file" accept="image/*" hidden
+                    onChange={(e) => { uploadImage(c.key, e.target.files?.[0]); e.target.value = ""; }} />
+                  {img
+                    ? <img src={img} alt="" />
+                    : <span>{uploadingKey === c.key ? "..." : Icon.image}</span>}
+                  {img && (
+                    <button type="button" className="var-matrix-img-del"
+                      onClick={(e) => { e.preventDefault(); setImage(c.key, ""); }} title="ลบรูป">
+                      {Icon.close}
+                    </button>
+                  )}
+                </label>
+                <span className="var-matrix-label">{c.label}</span>
+                <input type="number" min="0" placeholder="0"
+                  value={matrix[c.key]?.price ?? ""}
+                  onChange={(e) => setPrice(c.key, "price", e.target.value)} />
+                <input type="number" min="0" placeholder="—"
+                  value={matrix[c.key]?.oldPrice ?? ""}
+                  onChange={(e) => setPrice(c.key, "oldPrice", e.target.value)} />
+              </div>
+            );
+          })}
+          <div style={{ fontSize: 12, color: "var(--c-muted)", marginTop: 4 }}>
+            เมื่อลูกค้าเลือกครบทุกตัวเลือก รูปหลักจะเปลี่ยนเป็นรูปของแบบนั้น (ถ้าอัปไว้)
+          </div>
         </div>
       )}
       {combos.length === 0 && (
@@ -829,6 +900,130 @@ function VariantsEditor({ value, onChange }) {
           กรอกชื่อกลุ่มและเพิ่มตัวเลือกอย่างน้อย 1 อย่างในแต่ละกลุ่ม เพื่อกำหนดราคา
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------- Promo slides manager (สไลด์หน้าร้าน) ---------- */
+function PromoManager({ onClose, onToast }) {
+  const [slides, setSlides] = useStatePM(null); // null = กำลังโหลด
+  const [uploading, setUploading] = useStatePM(false);
+  const [saving, setSaving] = useStatePM(false);
+  const [dragIdx, setDragIdx] = useStatePM(null);
+
+  useEffectPM(() => {
+    let cancelled = false;
+    loadPromoSlides().then((s) => {
+      if (!cancelled) setSlides(s && s.length ? s : DEFAULT_PROMO_SLIDES);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const list = slides || [];
+
+  function update(i, patch) {
+    setSlides(list.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  }
+  function remove(i) { setSlides(list.filter((_, idx) => idx !== i)); }
+  function move(from, to) {
+    if (from == null || to == null || from === to || to < 0 || to >= list.length) return;
+    const next = list.slice();
+    const [m] = next.splice(from, 1);
+    next.splice(to, 0, m);
+    setSlides(next);
+  }
+  async function addImages(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const added = [];
+      for (const f of files) {
+        try {
+          const url = await resizeImageFile(f, 1600);
+          added.push({ src: url, title: "", sub: "" });
+        } catch (err) { console.error(err); }
+      }
+      setSlides([...list, ...added]);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await savePromoSlides(list);
+      onToast && onToast("บันทึกสไลด์หน้าร้านแล้ว");
+      onClose();
+    } catch (e) {
+      alert("บันทึกไม่สำเร็จ: " + (e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal promo-mgr" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>{Icon.close}</button>
+        <h2 className="cat-mgr-title">จัดการสไลด์หน้าร้าน</h2>
+        <p style={{ margin: "0 0 16px", color: "var(--c-muted)", fontSize: 14 }}>
+          อัปโหลดรูป ลากเพื่อจัดเรียง และใส่ข้อความ (ถ้าต้องการ) · กด “บันทึก” เพื่อให้แสดงในหน้าร้าน
+        </p>
+
+        {slides === null ? (
+          <div style={{ padding: 30, textAlign: "center", color: "var(--c-muted)" }}>กำลังโหลด...</div>
+        ) : (
+          <div className="promo-mgr-list">
+            {list.map((s, i) => (
+              <div
+                className={`promo-mgr-item ${dragIdx === i ? "dragging" : ""}`}
+                key={i}
+                draggable
+                onDragStart={() => setDragIdx(i)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => { e.preventDefault(); move(dragIdx, i); setDragIdx(null); }}
+                onDragEnd={() => setDragIdx(null)}
+              >
+                <div className="promo-mgr-order">{i + 1}</div>
+                <div className="promo-mgr-thumb">
+                  <img src={s.src} alt="" draggable={false}
+                    onError={(e) => { e.currentTarget.style.opacity = 0.3; }} />
+                </div>
+                <div className="promo-mgr-fields">
+                  <input placeholder="หัวข้อ (ถ้ามี)" value={s.title || ""}
+                    onChange={(e) => update(i, { title: e.target.value })} />
+                  <input placeholder="คำโปรย (ถ้ามี)" value={s.sub || ""}
+                    onChange={(e) => update(i, { sub: e.target.value })} />
+                </div>
+                <div className="promo-mgr-actions">
+                  <button type="button" onClick={() => move(i, i - 1)} disabled={i === 0} title="เลื่อนขึ้น">{Icon.chevronLeft}</button>
+                  <button type="button" onClick={() => move(i, i + 1)} disabled={i === list.length - 1} title="เลื่อนลง">{Icon.chevronRight}</button>
+                  <button type="button" className="promo-mgr-del" onClick={() => remove(i)} title="ลบ">{Icon.trash}</button>
+                </div>
+              </div>
+            ))}
+            {list.length === 0 && (
+              <div style={{ padding: 20, textAlign: "center", color: "var(--c-muted)", fontSize: 14 }}>
+                ยังไม่มีสไลด์ — กดปุ่มด้านล่างเพื่อเพิ่มรูป
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="promo-mgr-foot">
+          <label className="btn btn-outline">
+            <input type="file" accept="image/*" multiple hidden onChange={addImages} />
+            {Icon.upload} {uploading ? "กำลังอัปโหลด..." : "เพิ่มรูปสไลด์"}
+          </label>
+          <div style={{ flex: 1 }} />
+          <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving || slides === null}>
+            {saving ? "กำลังบันทึก..." : <>บันทึก {Icon.check}</>}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import React from "react";
 import { Icon, ProductPlaceholder } from "./icons.jsx";
 import { STORE } from "./data.jsx";
 import { useCategories } from "./categories-store.jsx";
+import { loadPromoSlides, DEFAULT_PROMO_SLIDES, PROMO_CHANGED } from "./settings-store.jsx";
 import {
   hasVariants, allCombos, comboKey, variantPrice, priceRange,
   cartLines, setLineQty, removeLine,
@@ -108,21 +109,31 @@ function HeroBanner() {
 }
 
 /* ---------- Promo carousel (auto-scrolling images) ---------- */
-const PROMO_SLIDES = [
-  { src: "/assets/promo-1.jpg", alt: "บาตรลูกจีน เคลือบเทปลอน", title: "บาตรลูกจีน เคลือบเทปลอน", sub: "เสริมขอบ งานคุณภาพ" },
-  { src: "/assets/promo-2.jpg", alt: "บาตรเคลือบเทปลอน 3 แบบ 3 ทรง", title: "บาตรเคลือบเทปลอน", sub: "3 แบบ 3 ทรง ให้เลือก" },
-];
-
 function PromoCarousel() {
   const [idx, setIdx] = React.useState(0);
   const [failed, setFailed] = React.useState({});
-  const count = PROMO_SLIDES.length;
+  const [slides, setSlides] = React.useState(DEFAULT_PROMO_SLIDES);
+  const count = slides.length;
+
+  React.useEffect(() => {
+    let cancelled = false;
+    function refresh() {
+      loadPromoSlides().then((s) => {
+        if (!cancelled && s && s.length) { setSlides(s); setIdx(0); setFailed({}); }
+      });
+    }
+    refresh();
+    window.addEventListener(PROMO_CHANGED, refresh);
+    return () => { cancelled = true; window.removeEventListener(PROMO_CHANGED, refresh); };
+  }, []);
 
   React.useEffect(() => {
     if (count <= 1) return;
     const t = setInterval(() => setIdx((i) => (i + 1) % count), 4000);
     return () => clearInterval(t);
   }, [count]);
+
+  const PROMO_SLIDES = slides;
 
   return (
     <section className="promo-carousel-section">
@@ -142,7 +153,7 @@ function PromoCarousel() {
                 <img
                   className="promo-img"
                   src={s.src}
-                  alt={s.alt}
+                  alt={s.title || STORE.name}
                   onError={() => setFailed((f) => ({ ...f, [i]: true }))}
                 />
               )}
@@ -470,7 +481,16 @@ function ProductModal({ product, onClose, onAdd }) {
   const [qty, setQty] = React.useState(1);
   const [activeImg, setActiveImg] = React.useState(0);
   const [selected, setSelected] = React.useState({}); // { [groupName]: choice }
-  React.useEffect(() => { setQty(1); setActiveImg(0); setSelected({}); }, [product?.id]);
+  const [heroOverride, setHeroOverride] = React.useState(null); // รูปของคู่ผสม variant
+  React.useEffect(() => { setQty(1); setActiveImg(0); setSelected({}); setHeroOverride(null); }, [product?.id]);
+  // เมื่อเลือกครบทุกตัวเลือก → ถ้าคู่ผสมนั้นมีรูป ให้เปลี่ยนรูปหลักตาม (ต้องอยู่ก่อน early-return เพื่อกฎ Hooks)
+  React.useEffect(() => {
+    if (!product || !hasVariants(product)) { setHeroOverride(null); return; }
+    const opts = product.variants.options;
+    const key = opts.every((o) => selected[o.name]) ? comboKey(opts.map((o) => selected[o.name])) : null;
+    const img = key ? (product.variants?.matrix?.[key]?.image || null) : null;
+    setHeroOverride(img);
+  }, [product?.id, selected]);
   if (!product) return null;
   const hasImages = product.images && product.images.length > 0;
   const galleryImages = hasImages ? product.images : [null]; // null means placeholder
@@ -520,7 +540,7 @@ function ProductModal({ product, onClose, onAdd }) {
           {/* LEFT: Gallery */}
           <div className="pd-gallery">
             <div className="pd-main">
-              {renderGalleryItem(galleryImages[activeImg])}
+              {renderGalleryItem(heroOverride || galleryImages[activeImg])}
               {product.discount > 0 && (
                 <div className="badge-discount" style={{ top: 16, right: 16, fontSize: 14, padding: "6px 12px" }}>
                   -{product.discount}%
@@ -537,8 +557,8 @@ function ProductModal({ product, onClose, onAdd }) {
                 {galleryImages.map((img, i) => (
                   <button
                     key={i}
-                    className={`pd-thumb ${activeImg === i ? "active" : ""}`}
-                    onClick={() => setActiveImg(i)}
+                    className={`pd-thumb ${activeImg === i && !heroOverride ? "active" : ""}`}
+                    onClick={() => { setActiveImg(i); setHeroOverride(null); }}
                   >
                     {renderGalleryItem(img)}
                   </button>
