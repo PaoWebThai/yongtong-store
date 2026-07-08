@@ -999,7 +999,9 @@ function RichEditor({ value, onChange }) {
     t.remove(); setInTable(false); emit();
   }
 
-  const keepSel = (e) => e.preventDefault(); // ป้องกันไม่ให้ toolbar แย่ง selection
+  // ป้องกันไม่ให้ปุ่ม toolbar แย่ง selection ของ editor
+  // แต่ต้องยกเว้น <input> (เช่น slider ปรับขนาด) ไม่งั้น preventDefault จะทำให้ลากไม่ได้
+  const keepSel = (e) => { if (e.target.tagName !== "INPUT") e.preventDefault(); };
 
   return (
     <div className="rich-wrap">

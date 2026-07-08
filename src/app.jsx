@@ -212,7 +212,7 @@ function App() {
 
       <AboutStore />
 
-      <Footer onAdminClick={() => setAdminLoginOpen(true)} />
+      <Footer onAdminClick={() => { if (isAdmin()) setAdminMode(true); else setAdminLoginOpen(true); }} />
 
       <CartDrawer
         open={cartOpen}
